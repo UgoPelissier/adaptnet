@@ -1,0 +1,53 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Python: Current File",
+        "type": "python",
+        "request": "launch",
+        "program": "${file}",
+        "console": "integratedTerminal",
+        "justMyCode": false,
+        "env": {
+          "OMP_NUM_THREADS": "1",
+          "CUDA_VISIBLE_DEVICES": "1",
+        }
+      },
+      {
+        "type": "python",
+        "justMyCode": false,
+        "request": "launch",
+        "name": "Fit: main.py",
+        "console": "integratedTerminal",
+        "program": "${workspaceFolder}/graphnet/main.py",
+        "env": {
+          "OMP_NUM_THREADS": "1",
+          "CUDA_VISIBLE_DEVICES": "1",
+        },
+        "args": [
+          //////////////////// SUBCOMMAND ////////////////////
+          "fit"
+        ]
+      },
+      {
+        "type": "python",
+        "justMyCode": false,
+        "request": "launch",
+        "name": "Test: main.py",
+        "console": "integratedTerminal",
+        "program": "${workspaceFolder}/graphnet/main.py",
+        "env": {
+          "OMP_NUM_THREADS": "1",
+          "CUDA_VISIBLE_DEVICES": "1",
+        },
+        "args": [
+          //////////////////// SUBCOMMAND ////////////////////
+          "test",
+          //////////////////// CHECKPOINT ////////////////////
+          "--ckpt_path",
+          "/data/users/upelissier/30-Code/graphnet/logs/version_1/checkpoints/epoch=47-step=30000.ckpt",
+        ]
+      }
+    ]
+  }
+  

@@ -1,0 +1,94 @@
+IMPORT "io.edp"
+load "iovtk"
+load "msh3"
+
+real rstart = 0.75;
+real xstart = -5.;
+real L = 30. - xstart;
+real h = 5.;
+real margin = 2.;
+
+string path = importString("path");
+string name = importString("name");
+
+int[int] type = importIntArray("type");
+real[int] ts = importFloatArray("tstart");
+real[int] te = importFloatArray("tend");
+real[int] xs = importFloatArray("xs");
+real[int] ys = importFloatArray("ys");
+real[int] zs = importFloatArray("zs");
+real[int] xe = importFloatArray("xe");
+real[int] ye = importFloatArray("ye");
+real[int] ze = importFloatArray("ze");
+real[int] r1 = importFloatArray("r1");
+real[int] r2 = importFloatArray("r2");
+int[int] label = importIntArray("label");
+int[int] points = importIntArray("points");
+
+border ba(t=0, 1.0)
+{
+    real tt = (te[0]-ts[0])*t + ts[0];
+    real xstart = xs[0]-r1[0]*cos(ts[0]);
+    real xend = xe[0]-r1[0]*cos(te[0]);
+    real ystart = ys[0]-r2[0]*sin(ts[0]);
+    real yend = ye[0]-r2[0]*sin(te[0]);
+    x = (xend-xstart)*tt + xstart + r1[0]*cos(tt);
+    y = (yend-ystart)*tt + ystart + r2[0]*sin(tt);
+    label = label[0];
+}
+
+border bb(t=0, 1.0)
+{
+    real tt = (te[1]-ts[1])*t + ts[1];
+    real xstart = xs[1]-r1[1]*cos(ts[1]);
+    real xend = xe[1]-r1[1]*cos(te[1]);
+    real ystart = ys[1]-r2[1]*sin(ts[1]);
+    real yend = ye[1]-r2[1]*sin(te[1]);
+    x = (xend-xstart)*tt + xstart + r1[1]*cos(tt);
+    y = (yend-ystart)*tt + ystart + r2[1]*sin(tt);
+    label = label[1];
+}
+
+border bc(t=0, 1.0)
+{
+    real tt = (te[2]-ts[2])*t + ts[2];
+    real xstart = xs[2]-r1[2]*cos(ts[2]);
+    real xend = xe[2]-r1[2]*cos(te[2]);
+    real ystart = ys[2]-r2[2]*sin(ts[2]);
+    real yend = ye[2]-r2[2]*sin(te[2]);
+    x = (xend-xstart)*tt + xstart + r1[2]*cos(tt);
+    y = (yend-ystart)*tt + ystart + r2[2]*sin(tt);
+    label = label[2];
+}
+
+border bd(t=0, 1.0)
+{
+    real tt = (te[3]-ts[3])*t + ts[3];
+    real xstart = xs[3]-r1[3]*cos(ts[3]);
+    real xend = xe[3]-r1[3]*cos(te[3]);
+    real ystart = ys[3]-r2[3]*sin(ts[3]);
+    real yend = ye[3]-r2[3]*sin(te[3]);
+    x = (xend-xstart)*tt + xstart + r1[3]*cos(tt);
+    y = (yend-ystart)*tt + ystart + r2[3]*sin(tt);
+    label = label[3];
+}
+
+border circle(t=0, 1.0)
+{
+    real tt = (te[4]-ts[4])*t + ts[4];
+    real xstart = xs[4]-r1[4]*cos(ts[4]);
+    real xend = xe[4]-r1[4]*cos(te[4]);
+    real ystart = ys[4]-r2[4]*sin(ts[4]);
+    real yend = ye[4]-r2[4]*sin(te[4]);
+    x = (xend-xstart)*tt + xstart + r1[4]*cos(tt);
+    y = (yend-ystart)*tt + ystart + r2[4]*sin(tt);
+    label = label[4];
+}
+
+mesh ThPred = buildmesh(ba(points[0])+bb(points[1])+bc(points[2])+bd(points[3])+circle(points[4]));
+
+string title = path + "/msh/" + name + ".msh";
+savemesh(ThPred, title);
+
+title = path + "/vtu/" + name + ".vtu";
+savevtk(title, ThPred, bin=false);
