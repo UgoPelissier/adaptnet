@@ -11,4 +11,4 @@ do
 done
 
 cd $PYTHONPATH
-python meshnet/main.py fit #-c meshnet/configs/${env}.yaml
+python meshnet/main.py fit -c meshnet/configs/${env}.yaml
