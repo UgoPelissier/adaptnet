@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+
       {
         "name": "Python: Current File",
         "type": "python",
@@ -19,14 +20,17 @@
         "request": "launch",
         "name": "Fit: main.py",
         "console": "integratedTerminal",
-        "program": "${workspaceFolder}/graphnet/main.py",
+        "program": "${workspaceFolder}/meshnet/main.py",
         "env": {
           "OMP_NUM_THREADS": "1",
           "CUDA_VISIBLE_DEVICES": "1",
         },
         "args": [
           //////////////////// SUBCOMMAND ////////////////////
-          "fit"
+          "fit",
+          //////////////////// CHECKPOINT ////////////////////
+          "-c",
+          "/home/eleve05/adaptnet/meshnet/configs/mines.yaml",
         ]
       },
       {
