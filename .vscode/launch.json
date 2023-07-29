@@ -18,7 +18,7 @@
         "type": "python",
         "justMyCode": false,
         "request": "launch",
-        "name": "Fit: main.py",
+        "name": "Fit meshnet",
         "console": "integratedTerminal",
         "program": "${workspaceFolder}/meshnet/main.py",
         "env": {
@@ -37,9 +37,9 @@
         "type": "python",
         "justMyCode": false,
         "request": "launch",
-        "name": "Test: main.py",
+        "name": "Test meshnet",
         "console": "integratedTerminal",
-        "program": "${workspaceFolder}/graphnet/main.py",
+        "program": "${workspaceFolder}/meshnet/main.py",
         "env": {
           "OMP_NUM_THREADS": "1",
           "CUDA_VISIBLE_DEVICES": "1",
@@ -49,7 +49,7 @@
           "test",
           //////////////////// CHECKPOINT ////////////////////
           "--ckpt_path",
-          "/data/users/upelissier/30-Code/graphnet/logs/version_1/checkpoints/epoch=47-step=30000.ckpt",
+          "/home/eleve05/adaptnet/meshnet/logs/version_1/checkpoints/nes/epoch=99-step=2400.ckpt",
         ]
       }
     ]
