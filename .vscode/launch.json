@@ -48,8 +48,10 @@
           //////////////////// SUBCOMMAND ////////////////////
           "test",
           //////////////////// CHECKPOINT ////////////////////
+          "-c",
+          "/home/eleve05/adaptnet/meshnet/configs/mines.yaml",
           "--ckpt_path",
-          "/home/eleve05/adaptnet/meshnet/logs/version_1/checkpoints/nes/epoch=99-step=2400.ckpt",
+          "/home/eleve05/adaptnet/meshnet/logs/version_1/checkpoints/epoch=99-step=2400.ckpt",
         ]
       }
     ]
