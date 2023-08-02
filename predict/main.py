@@ -19,9 +19,9 @@ if __name__ == '__main__':
     start_time = time.time()
 
     # load config file
-    with open('predict/configs/safran.yaml', 'r') as f:
+    with open('predict/configs/mines.yaml', 'r') as f:
         config = yaml.safe_load(f)
-    print(f'Loaded config file from predict/configs/safran.yaml')
+    print(f'Loaded config file from predict/configs/mines.yaml')
     # add path to python path
     sys.path.append(config['wdir'])
 
