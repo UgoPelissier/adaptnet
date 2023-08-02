@@ -2,8 +2,6 @@ import yaml
 import os
 import os.path as osp
 import sys
-import pandas as pd
-import numpy as np
 import shutil
 import torch
 from torch_geometric.data import Data
@@ -11,7 +9,7 @@ import meshio
 import time
 from pyfreefem import FreeFemRunner
 
-from utils.utils import length, triangles_to_edges, write_field
+from utils.utils import node_type, triangles_to_edges, write_field
 
 if __name__ == '__main__':
     print('*** ADAPTNET ***\n')
@@ -25,11 +23,14 @@ if __name__ == '__main__':
     # add path to python path
     sys.path.append(config['wdir'])
 
+    os.makedirs(osp.join(config['save_dir'], config['save_folder']), exist_ok=True)
+
     # import modules
     from meshnet.model.module import MeshNet
+    import meshnet.utils.stats as meshnet_stats
     from graphnet.model.module import GraphNet
     from graphnet.data.dataset import NodeType
-    from graphnet.utils.stats import load_stats, unnormalize
+    import graphnet.utils.stats as graphnet_stats
 
     # load pre-trained models
     meshnet = MeshNet.load_from_checkpoint(
@@ -61,70 +62,111 @@ if __name__ == '__main__':
     )
     print(f'Loaded GraphNet from {config["graphnet"]["checkpoint_path"]}\n')
 
-    exit(0)
-
     print('MeshNet...')
-    # load cad file
-    df = pd.read_csv(osp.join(config['save_dir'], 'data', f'{config["name"]}.txt'), sep='\t')
+    with open(osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo'.format(config['name'])), 'r') as f:
+        # read lines and remove comments
+        lines = f.readlines()
+        lines = [line.strip() for line in lines]
+        lines = [line for line in lines if not (line.startswith('//') or line.startswith('SetFactory'))]
 
-    # process cad file as in meshnet dataset
-    df['length'] = length(df)
-    df['orientation'] = df['sens']
-    
-    x = torch.tensor(np.array(df.drop(columns=['xstart', 'ystart', 'zstart', 'xend', 'yend', 'zend', 'label', 'sens'])), dtype=torch.float32).to(config['device'])
-    pos = torch.tensor(df[['xstart', 'ystart', 'zstart', 'xend', 'yend', 'zend']].values).to(config['device'])
+        # extract points, lines and circles
+        points = [line for line in lines if line.startswith('Point')]
+        lines__ = [line for line in lines if line.startswith('Line')]
+        physical_curves = [line for line in lines if line.startswith('Physical Curve')]
+        circles = [line for line in lines if line.startswith('Ellipse')]
 
-    processed_cad = Data(x=x, pos=pos, name=torch.tensor(int(config['name'][-3:]), dtype=torch.long))
+        # extract coordinates and mesh size
+        points = torch.Tensor([[float(p) for p in line.split('{')[1].split('}')[0].split(',')] for line in points])
+        y = points[:, -1]
+        points = points[:, :-1]
 
-    # predict mesh point density
-    pred = meshnet(processed_cad)
-    data = torch.hstack((x, pos, pred))
+        # extract edges
+        lines__ = torch.Tensor([[int(p) for p in line.split('{')[1].split('}')[0].split(',')] for line in lines__]).long()
+        circles = torch.Tensor([[int(p) for p in line.split('{')[1].split('}')[0].split(',')] for line in circles]).long()[:,[0,2]]
+        edges = torch.cat([lines__, circles], dim=0) -1
 
-    columns=['type', 'tstart', 'tend', 'radius1', 'radius2', 'length', 'orientation', 'xstart', 'ystart', 'zstart', 'xend', 'yend', 'zend', 'pred']
-    type = data[:,0].long()
-    tstart = data[:,1]
-    tend = data[:,2]
-    radius1 = data[:,3]
-    radius2 = data[:,4]
-    length = data[:,5]
-    orientation = data[:,6]
-    xstart = data[:,7]
-    ystart = data[:,8]
-    zstart = data[:,9]
-    xend = data[:,10]
-    yend = data[:,11]
-    zend = data[:,12]
-    pred = data[:,13]
-    
-    points = orientation*length/pred
-    label = torch.Tensor(df['label'].values).long().to(config['device'])
-    
-    # generate mesh
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'msh'), exist_ok=True)
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtu'), exist_ok=True)
-    runner = FreeFemRunner(script=osp.join(config['predict_dir'], 'freefem', 'prim2mesh.edp'), run_dir=osp.join(config['save_dir'], 'tmp', 'meshnet'))
-    runner.import_variables(
-        path=osp.join(config['save_dir'], config['save_folder']),
-        name=config['name'],
-        type=type,
-        tstart=tstart,
-        tend=tend,
-        xs=xstart,
-        ys=ystart,
-        zs=zstart,
-        xe=xend,
-        ye=yend,
-        ze=zend,
-        r1=radius1,
-        r2=radius2,
-        label=label,
-        points=points.long()
+        count = 0
+        for i in range(points.shape[0]):
+            if not (i-count) in edges:
+                points = torch.cat([points[:i-count], points[i-count+1:]], dim=0)
+                y = torch.cat([y[:i-count], y[i-count+1:]], dim=0)
+                edges = edges - 1*(edges>(i-count))
+                count += 1
+
+        receivers = torch.min(edges, dim=1).values
+        senders = torch.max(edges, dim=1).values
+        packed_edges = torch.stack([senders, receivers], dim=1)
+        # remove duplicates and unpack
+        unique_edges, permutation = torch.unique(packed_edges, return_inverse=True, dim=0)
+        senders, receivers = unique_edges[:, 0], unique_edges[:, 1]
+        # create two-way connectivity
+        edge_index = torch.stack([torch.cat((senders, receivers), dim=0), torch.cat((receivers, senders), dim=0)], dim=0)
+
+        # extract node types
+        edge_types = torch.zeros(edges.shape[0], dtype=torch.long)
+        for curve in physical_curves:
+            label = curve.split('(')[1].split('"')[1]
+            lines = curve.split('{')[1].split('}')[0].split(',')
+            for line in lines:
+                edge_types[int(line)-1] = node_type(label)
+        tmp = torch.zeros(edges.shape[0], dtype=torch.long)
+        for i in range(len(permutation)):
+            tmp[permutation[i]] = edge_types[i]
+        edge_types = torch.cat((tmp, tmp), dim=0)
+        edge_types_one_hot = torch.nn.functional.one_hot(edge_types.long(), num_classes=NodeType.SIZE)
+
+        # get edge attributes
+        u_i = points[edge_index[0]][:,:2]
+        u_j = points[edge_index[1]][:,:2]
+        u_ij = torch.Tensor(u_i - u_j)
+        u_ij_norm = torch.norm(u_ij, p=2, dim=1, keepdim=True)
+        edge_attr = torch.cat((u_ij, u_ij_norm, edge_types_one_hot),dim=-1).type(torch.float)
+
+        # get node attributes
+        x = torch.zeros(points.shape[0], NodeType.SIZE)
+        for i in range(edge_index.shape[0]):
+            for j in range(edge_index.shape[1]):
+                x[edge_index[i,j], edge_types[j]] = 1.0
+
+        processed_cad = Data(
+            x=x.to(config['device']),
+            edge_index=edge_index.to(config['device']),
+            edge_attr=edge_attr.to(config['device']),
+            y=y.to(config['device']),
+            name=torch.Tensor([config['name']]).long().to(config['device'])
         )
-    runner.execute()
 
-    # clean tmp folder
-    shutil.rmtree(osp.join(config['save_dir'], 'tmp', 'meshnet'))
+    # load stats
+    train_stats, val_stats, test_stats = meshnet_stats.load_stats(config['meshnet']['data_dir'], torch.device(config['device']))
+    mean_vec_x_train, std_vec_x_train, mean_vec_edge_train, std_vec_edge_train, mean_vec_y_train, std_vec_y_train = train_stats
+
+    # predict mesh point density    
+    pred = meshnet_stats.unnormalize(
+        data=meshnet(
+            batch=processed_cad,
+            split='predict',
+            mean_vec_x_predict=mean_vec_x_train,
+            std_vec_x_predict=std_vec_x_train,
+            mean_vec_edge_predict=mean_vec_edge_train,
+            std_vec_edge_predict=std_vec_edge_train
+        ),
+        mean=mean_vec_y_train,
+        std=std_vec_y_train
+    )
+
+    # save mesh
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'msh'), exist_ok=True)
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
+    
+    meshnet.generate_mesh(
+        cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo'.format(config['name'])),
+        batch=processed_cad,
+        pred=pred,
+        save_dir=osp.join(config['save_dir'], config['save_folder'])
+    )
     print('Done\n')
+
+    exit(0)
 
     print('GraphNet...')
     # read mesh
