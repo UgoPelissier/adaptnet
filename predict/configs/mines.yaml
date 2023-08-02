@@ -1,7 +1,7 @@
 wdir: /home/eleve05/adaptnet
 predict_dir: /home/eleve05/adaptnet/predict/
-save_dir: home/eleve05/adaptnet/predict/
-name: cad_500
+save_dir: /home/eleve05/adaptnet/predict/
+name: 500
 save_folder: results
 device: cuda:0
 meshnet:
