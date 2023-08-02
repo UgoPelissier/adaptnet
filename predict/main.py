@@ -61,6 +61,8 @@ if __name__ == '__main__':
     )
     print(f'Loaded GraphNet from {config["graphnet"]["checkpoint_path"]}\n')
 
+    exit(0)
+
     print('MeshNet...')
     # load cad file
     df = pd.read_csv(osp.join(config['save_dir'], 'data', f'{config["name"]}.txt'), sep='\t')

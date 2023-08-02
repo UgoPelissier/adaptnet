@@ -5,7 +5,7 @@ name: cad_500
 save_folder: results
 device: cuda:0
 meshnet:
-  checkpoint_path: home/eleve05/adaptnet/meshnet/logs/version_1/checkpoints/epoch=99-step=2400.ckpt
+  checkpoint_path: /home/eleve05/adaptnet/meshnet/logs/version_1/checkpoints/epoch=99-step=2400.ckpt
   wdir: /home/eleve05/adaptnet/meshnet/
   data_dir: /home/eleve05/adaptnet/meshnet/data/stokes/
   logs: /home/eleve05/adaptnet/meshnet/logs/
@@ -16,11 +16,11 @@ meshnet:
   output_dim: 1
   optimizer: torch.optim.AdamW
 graphnet:
-  checkpoint_path: home/eleve05/adaptnet/graphnet/logs/version_0/checkpoints/epoch=900-step=169388.ckpt
-  dir: home/eleve05/adaptnet/
-  wdir: /gpfs_new/home/eleve05/adaptnet/graphnet/
+  checkpoint_path: /home/eleve05/adaptnet/graphnet/logs/version_7/checkpoints/epoch=900-step=169388.ckpt
+  dir: /home/eleve05/adaptnet/
+  wdir: /home/eleve05/adaptnet/graphnet/
   data_dir: home/eleve05/adaptnet/graphnet/data/stokes/
-  logs: home/eleve05/adaptnet/graphnet/logs/
+  logs: /home/eleve05/adaptnet/graphnet/logs/
   num_layers: 15
   input_dim_node: 7
   input_dim_edge: 3
