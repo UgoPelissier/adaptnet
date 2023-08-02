@@ -1,38 +1,19 @@
 import os.path as osp
-import numpy as np
-import pandas as pd
 import torch
-
-def line(
-        start: np.ndarray,
-        end: np.ndarray,
-        scale: float
-) -> float:
-    """Compute the length of a line."""
-    return scale*float(np.linalg.norm(end-start))
+from meshnet.data.dataset import NodeType
 
 
-def ellipse(
-        r1: float,
-        r2: float,
-        scale: float
-) -> float:
-    """Compute the length of an ellipse."""
-    return scale*np.sqrt((r1**2 + r2**2)/2)
-
-
-def length(
-        df: pd.DataFrame
-) -> np.ndarray:
-    """Compute the length of the primitive."""
-    length = []
-    for i in range(df.shape[0]):
-        temp = df.iloc[i]
-        if (temp['type'] == 1):
-            length.append(line(np.array(temp[['xstart', 'ystart', 'zstart']].values), np.array(temp[['xend', 'yend', 'zend']].values), temp['tend']-temp['tstart']))
-        elif (temp['type'] == 2):
-            length.append(ellipse(temp['radius1'], temp['radius2'], temp['tend']-temp['tstart']))
-    return np.array(length)
+def node_type(label: str) -> int:
+        if label == 'INFLOW':
+            return NodeType.INFLOW
+        elif label == 'OUTFLOW':
+            return NodeType.OUTFLOW
+        elif label == 'WALL_BOUNDARY':
+            return NodeType.WALL_BOUNDARY
+        elif label == 'OBSTACLE':
+            return NodeType.OBSTACLE
+        else:
+            return NodeType.NORMAL
 
 
 def triangles_to_edges(faces: torch.Tensor) -> torch.Tensor:
