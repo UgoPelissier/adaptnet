@@ -34,12 +34,14 @@ if __name__ == '__main__':
     # load pre-trained models
     meshnet = MeshNet.load_from_checkpoint(
         checkpoint_path=config['meshnet']['checkpoint_path'],
-        input_channels=config['meshnet']['input_channels'],
         wdir=config['meshnet']['wdir'],
         data_dir=config['meshnet']['data_dir'],
         logs=config['meshnet']['logs'],
-        val_size=config['meshnet']['val_size'],
-        test_size=config['meshnet']['test_size'],
+        num_layers= config['meshnet']['num_layers'],
+        input_dim_node= config['meshnet']['input_dim_node'], 
+        input_dim_edge= config['meshnet']['input_dim_edge'],
+        hidden_dim= config['meshnet']['hidden_dim'],
+        output_dim= config['meshnet']['output_dim'],
         optimizer=config['meshnet']['optimizer']
     )
     print(f'Loaded MeshNet from {config["meshnet"]["checkpoint_path"]}')

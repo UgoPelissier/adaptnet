@@ -6,12 +6,14 @@ save_folder: results
 device: cuda:0
 meshnet:
   checkpoint_path: home/eleve05/adaptnet/meshnet/logs/version_1/checkpoints/epoch=99-step=2400.ckpt
-  input_channels: 7
   wdir: /home/eleve05/adaptnet/meshnet/
-  data_dir: home/eleve05/adaptnet/meshnet/data/stokes/
-  logs: home/eleve05/adaptnet/meshnet/logs/
-  val_size: 0.15
-  test_size: 0.1
+  data_dir: /home/eleve05/adaptnet/meshnet/data/stokes/
+  logs: /home/eleve05/adaptnet/meshnet/logs/
+  num_layers: 15
+  input_dim_node: 5
+  input_dim_edge: 8
+  hidden_dim: 128
+  output_dim: 1
   optimizer: torch.optim.AdamW
 graphnet:
   checkpoint_path: home/eleve05/adaptnet/graphnet/logs/version_0/checkpoints/epoch=900-step=169388.ckpt
