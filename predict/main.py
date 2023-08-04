@@ -247,7 +247,7 @@ if __name__ == '__main__':
     write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,0], 'u_pred')
     write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,1], 'v_pred')
 
-    # adapt mesh
+    # # adapt mesh
     # runner = FreeFemRunner(script=osp.join(config['predict_dir'], 'freefem', 'adapt.edp'), run_dir=osp.join(config['save_dir'], 'tmp', 'graphnet'))
     # runner.import_variables(
     #         mesh_dir=osp.join(config['save_dir'], config['save_folder'], 'msh'),
@@ -257,7 +257,7 @@ if __name__ == '__main__':
     #         )
     # runner.execute()
 
-    # clean tmp folder
+    # # clean tmp folder
     # shutil.rmtree(osp.join(config['save_dir'], 'tmp', 'graphnet'))
     print('Done\n')
 
