@@ -19,7 +19,7 @@ graphnet:
   checkpoint_path: /home/eleve05/adaptnet/graphnet/logs/version_7/checkpoints/epoch=900-step=169388.ckpt
   dir: /home/eleve05/adaptnet/
   wdir: /home/eleve05/adaptnet/graphnet/
-  data_dir: home/eleve05/adaptnet/graphnet/data/stokes/
+  data_dir: /home/eleve05/adaptnet/graphnet/data/stokes/
   logs: /home/eleve05/adaptnet/graphnet/logs/
   num_layers: 15
   input_dim_node: 7
