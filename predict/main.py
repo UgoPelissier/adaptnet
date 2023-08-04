@@ -166,21 +166,15 @@ if __name__ == '__main__':
     )
     print('Done\n')
 
-    exit(0)
-
     print('GraphNet...')
     # read mesh
-    mesh = meshio.read(osp.join(config['save_dir'], config['save_folder'], 'vtu', f'{config["name"]}.vtu'))
+    mesh = meshio.read(osp.join(config['save_dir'], config['save_folder'], 'vtk', 'mesh_{:03d}.vtk'.format(config["name"])))
 
     # node type
     node_type = torch.zeros(mesh.points.shape[0])
-    for i in range(mesh.cells[1].data.shape[0]):
-        for j in range(mesh.cells[1].data.shape[1]):
-            tmp = mesh.cell_data['Label'][1][i]
-            if (tmp<4):
-                node_type[mesh.cells[1].data[i,j]] = tmp
-            else:
-                node_type[mesh.cells[1].data[i,j]] = tmp - 1
+    for i in range(mesh.cells[0].data.shape[0]):
+        for j in range(mesh.cells[0].data.shape[1]):
+            node_type[mesh.cells[0].data[i,j]] = int(mesh.cell_data['CellEntityIds'][1][i]) - 1
             
     node_type_one_hot = torch.nn.functional.one_hot(node_type.long(), num_classes=NodeType.SIZE)
 
@@ -193,7 +187,7 @@ if __name__ == '__main__':
     x = torch.cat((v_0, node_type_one_hot),dim=-1).type(torch.float)
 
     # get edge indices in COO format
-    edge_index =triangles_to_edges(torch.Tensor(mesh.cells[0].data)).long()
+    edge_index = triangles_to_edges(torch.Tensor(mesh.cells[1].data)).long()
 
     # get edge attributes
     u_i = mesh.points[edge_index[0]][:,:2]
@@ -206,10 +200,10 @@ if __name__ == '__main__':
         x=x.to(config['device']),
         edge_index=edge_index.to(config['device']),
         edge_attr=edge_attr.to(config['device']),
-        cells=torch.Tensor(mesh.cells[0].data).to(config['device']),
+        cells=torch.Tensor(mesh.cells[1].data).to(config['device']),
         mesh_pos=torch.Tensor(mesh.points).to(config['device']),
         v_0=v_0.to(config['device']),
-        name=data[:-4]
+        name=config['name']
     )
 
     # normalize node features
@@ -221,11 +215,11 @@ if __name__ == '__main__':
     std_vec_edge = torch.maximum(torch.sqrt(torch.sum(edge_attr**2, dim = 0) / edge_attr.shape[0] - mean_vec_edge**2), torch.tensor(1e-8))
 
     # load stats
-    train_stats, val_stats, test_stats = load_stats(config['graphnet']['data_dir'], torch.device(config['device']))
+    train_stats, val_stats, test_stats = graphnet_stats.load_stats(config['graphnet']['data_dir'], torch.device(config['device']))
     mean_vec_x_train, std_vec_x_train, mean_vec_edge_train, std_vec_edge_train, mean_vec_y_train, std_vec_y_train = train_stats
 
     # predict velocity
-    pred = unnormalize(
+    pred = graphnet_stats.unnormalize(
             data=graphnet(
                 batch=mesh_processed,
                 split='predict',
@@ -238,13 +232,15 @@ if __name__ == '__main__':
         )
     
     # save solution
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtu'), exist_ok=True)
+
     mesh = meshio.Mesh(
             points=mesh_processed.mesh_pos.cpu().numpy(),
             cells={"triangle": mesh_processed.cells.cpu().numpy()},
             point_data={'u_pred': pred[:,0].detach().cpu().numpy(),
                         'v_pred': pred[:,1].detach().cpu().numpy()}
         )
-    mesh.write(osp.join(config['save_dir'], config['save_folder'], 'vtu', f'{config["name"]}_sol.vtu'), binary=False)
+    mesh.write(osp.join(config['save_dir'], config['save_folder'], 'vtu', 'cad_{:03d}_sol.vtu'.format(config["name"])), binary=False)
 
     # save field
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'field'), exist_ok=True)
@@ -252,17 +248,17 @@ if __name__ == '__main__':
     write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,1], 'v_pred')
 
     # adapt mesh
-    runner = FreeFemRunner(script=osp.join(config['predict_dir'], 'freefem', 'adapt.edp'), run_dir=osp.join(config['save_dir'], 'tmp', 'graphnet'))
-    runner.import_variables(
-            mesh_dir=osp.join(config['save_dir'], config['save_folder'], 'msh'),
-            name=config['name'],
-            wdir=osp.join(config['save_dir'], config['save_folder']),
-            field_dir=osp.join(config['save_dir'], config['save_folder'], 'field'),
-            )
-    runner.execute()
+    # runner = FreeFemRunner(script=osp.join(config['predict_dir'], 'freefem', 'adapt.edp'), run_dir=osp.join(config['save_dir'], 'tmp', 'graphnet'))
+    # runner.import_variables(
+    #         mesh_dir=osp.join(config['save_dir'], config['save_folder'], 'msh'),
+    #         name=config['name'],
+    #         wdir=osp.join(config['save_dir'], config['save_folder']),
+    #         field_dir=osp.join(config['save_dir'], config['save_folder'], 'field'),
+    #         )
+    # runner.execute()
 
     # clean tmp folder
-    shutil.rmtree(osp.join(config['save_dir'], 'tmp', 'graphnet'))
+    # shutil.rmtree(osp.join(config['save_dir'], 'tmp', 'graphnet'))
     print('Done\n')
 
     print(f'Predictions saved in {osp.join(config["save_dir"], config["save_folder"])}')
