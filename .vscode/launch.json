@@ -15,6 +15,18 @@
         }
       },
       {
+        "name": "Predict",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/predict/main.py",
+        "console": "integratedTerminal",
+        "justMyCode": false,
+        "env": {
+          "OMP_NUM_THREADS": "1",
+          "CUDA_VISIBLE_DEVICES": "1",
+        }
+      },
+      {
         "type": "python",
         "justMyCode": false,
         "request": "launch",
