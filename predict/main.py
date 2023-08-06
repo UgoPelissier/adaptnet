@@ -231,13 +231,15 @@ if __name__ == '__main__':
         )
     
     # save solution
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtu'), exist_ok=True)
+
     mesh = meshio.Mesh(
             points=mesh_processed.mesh_pos.cpu().numpy(),
             cells={"triangle": mesh_processed.cells.cpu().numpy()},
             point_data={'u_pred': pred[:,0].detach().cpu().numpy(),
                         'v_pred': pred[:,1].detach().cpu().numpy()}
         )
-    mesh.write(osp.join(config['save_dir'], config['save_folder'], 'vtk', 'cad_{:03d}_sol.vtk'.format(config["name"])), binary=False)
+    mesh.write(osp.join(config['save_dir'], config['save_folder'], 'vtu', 'cad_{:03d}_sol.vtu'.format(config["name"])), binary=False)
 
     # save field
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'field'), exist_ok=True)
