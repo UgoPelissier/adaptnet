@@ -155,7 +155,6 @@ if __name__ == '__main__':
     )
 
     # save mesh
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'msh'), exist_ok=True)
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
     
     meshnet.generate_mesh(
@@ -232,33 +231,19 @@ if __name__ == '__main__':
         )
     
     # save solution
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtu'), exist_ok=True)
-
     mesh = meshio.Mesh(
             points=mesh_processed.mesh_pos.cpu().numpy(),
             cells={"triangle": mesh_processed.cells.cpu().numpy()},
             point_data={'u_pred': pred[:,0].detach().cpu().numpy(),
                         'v_pred': pred[:,1].detach().cpu().numpy()}
         )
-    mesh.write(osp.join(config['save_dir'], config['save_folder'], 'vtu', 'cad_{:03d}_sol.vtu'.format(config["name"])), binary=False)
+    mesh.write(osp.join(config['save_dir'], config['save_folder'], 'vtk', 'cad_{:03d}_sol.vtk'.format(config["name"])), binary=False)
 
     # save field
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'field'), exist_ok=True)
     write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,0], 'u_pred')
     write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,1], 'v_pred')
 
-    # # adapt mesh
-    # runner = FreeFemRunner(script=osp.join(config['predict_dir'], 'freefem', 'adapt.edp'), run_dir=osp.join(config['save_dir'], 'tmp', 'graphnet'))
-    # runner.import_variables(
-    #         mesh_dir=osp.join(config['save_dir'], config['save_folder'], 'msh'),
-    #         name=config['name'],
-    #         wdir=osp.join(config['save_dir'], config['save_folder']),
-    #         field_dir=osp.join(config['save_dir'], config['save_folder'], 'field'),
-    #         )
-    # runner.execute()
-
-    # # clean tmp folder
-    # shutil.rmtree(osp.join(config['save_dir'], 'tmp', 'graphnet'))
     print('Done\n')
 
     print(f'Predictions saved in {osp.join(config["save_dir"], config["save_folder"])}')
