@@ -2,12 +2,10 @@ import yaml
 import os
 import os.path as osp
 import sys
-import shutil
 import torch
 from torch_geometric.data import Data
 import meshio
 import time
-from pyfreefem import FreeFemRunner
 
 from utils.utils import node_type, triangles_to_edges, write_field
 
