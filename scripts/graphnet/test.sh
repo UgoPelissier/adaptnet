@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
-ckpt_path=/data/users/upelissier/30-Code/graphnet/logs/version_0/checkpoints/epoch=900-step=169388.ckpt
+ckpt_path=/home/eleve05/adaptnet/graphnet/logs/version_8/checkpoints/epoch=999-step=188000.ckpt
 
 clear
+
+for arg in "$@"
+do
+   key=$(echo $arg | cut -f1 -d=)
+
+   key_length=${#key}
+   value="${arg:$key_length+1}"
+
+   export "$key"="$value"
+done
+
 cd $PYTHONPATH
-python graphnet/main.py test --ckpt_path $ckpt_path
+python graphnet/main.py test -c graphnet/configs/${env}.yaml --ckpt_path $ckpt_path
