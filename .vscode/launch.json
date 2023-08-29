@@ -49,6 +49,25 @@
         "type": "python",
         "justMyCode": false,
         "request": "launch",
+        "name": "Fit graphnet",
+        "console": "integratedTerminal",
+        "program": "${workspaceFolder}/graphnet/main.py",
+        "env": {
+          "OMP_NUM_THREADS": "1",
+          "CUDA_VISIBLE_DEVICES": "1",
+        },
+        "args": [
+          //////////////////// SUBCOMMAND ////////////////////
+          "fit",
+          //////////////////// CHECKPOINT ////////////////////
+          "-c",
+          "/home/eleve05/adaptnet/graphnet/configs/mines.yaml",
+        ]
+      },
+      {
+        "type": "python",
+        "justMyCode": false,
+        "request": "launch",
         "name": "Test meshnet",
         "console": "integratedTerminal",
         "program": "${workspaceFolder}/meshnet/main.py",
