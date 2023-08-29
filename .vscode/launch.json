@@ -84,6 +84,27 @@
           "--ckpt_path",
           "/home/eleve05/adaptnet/meshnet/logs/version_3/checkpoints/epoch=999-step=15000.ckpt",
         ]
+      },
+      {
+        "type": "python",
+        "justMyCode": false,
+        "request": "launch",
+        "name": "Test graphnet",
+        "console": "integratedTerminal",
+        "program": "${workspaceFolder}/graphnet/main.py",
+        "env": {
+          "OMP_NUM_THREADS": "1",
+          "CUDA_VISIBLE_DEVICES": "1",
+        },
+        "args": [
+          //////////////////// SUBCOMMAND ////////////////////
+          "test",
+          //////////////////// CHECKPOINT ////////////////////
+          "-c",
+          "/home/eleve05/adaptnet/graphnet/configs/mines.yaml",
+          "--ckpt_path",
+          "/home/eleve05/adaptnet/graphnet/logs/version_10/checkpoints/epoch=999-step=6000.ckpt",
+        ]
       }
     ]
   }
