@@ -7,7 +7,7 @@ device: cuda:0
 meshnet:
   checkpoint_path: /home/eleve05/adaptnet/meshnet/logs/version_1/checkpoints/epoch=99-step=2400.ckpt
   wdir: /home/eleve05/adaptnet/meshnet/
-  data_dir: /home/eleve05/adaptnet/meshnet/data/stokes/
+  data_dir: /home/eleve05/adaptnet/meshnet/data/stokes2/
   logs: /home/eleve05/adaptnet/meshnet/logs/
   dim: 2
   num_layers: 15
@@ -20,7 +20,7 @@ graphnet:
   checkpoint_path: /home/eleve05/adaptnet/graphnet/logs/version_8/checkpoints/epoch=999-step=188000.ckpt
   dir: /home/eleve05/adaptnet/
   wdir: /home/eleve05/adaptnet/graphnet/
-  data_dir: /home/eleve05/adaptnet/graphnet/data/stokes/
+  data_dir: /home/eleve05/adaptnet/graphnet/data/stokes2/
   logs: /home/eleve05/adaptnet/graphnet/logs/
   dim: 2
   num_layers: 15
