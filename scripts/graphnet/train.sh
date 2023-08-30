@@ -1,3 +1,5 @@
+ckpt_path=/home/eleve05/adaptnet/graphnet/logs/version_11/checkpoints/epoch=999-step=188000.ckpt
+
 clear
 
 for arg in "$@"
@@ -11,4 +13,4 @@ do
 done
 
 cd $PYTHONPATH
-python graphnet/main.py fit -c graphnet/configs/${env}.yaml
+python graphnet/main.py fit -c graphnet/configs/${env}.yaml --ckpt_path $ckpt_path
