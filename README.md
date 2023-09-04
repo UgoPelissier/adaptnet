@@ -36,5 +36,34 @@ Your folder should look like this:
 └── README.md
 ```
 
-### Run Meshnet and Graphnet
+### Train Meshnet and Graphnet
 Follow the instructions in the README.md files of Meshnet and Graphnet to download the data and train the models. This will generate checkpoint files in the `meshnet/logs/version_$VERSION_NUMBER/checkpoints` and `graphnet/logs/version_$VERSION_NUMBER/checkpoints` folders.
+
+Alternatively, if you already have the datasets, you can use the scripts in `scripts` to train and test the models:
+```bash
+bash ./scripts/meshnet/train.sh env=$ENV_NAME (mines or safran)
+bash ./scripts/meshnet/test.sh env=$ENV_NAME (mines or safran)
+```
+
+```bash
+bash ./scripts/graphnet/train.sh env=$ENV_NAME (mines or safran)
+bash ./scripts/graphnet/test.sh env=$ENV_NAME (mines or safran)
+```
+
+### Run Adaptnet
+Create a data folder in `src`:
+```bash
+mkdir src/data
+```	
+and put your CAD file inside it. For instance, `src` folder could look like this:
+```
+└── src
+    ├── configs
+    └── data
+        └── cad_500.geo
+    ├── envs
+    ├── utils
+    ├── __init__.py
+    ├── main.py
+    └── dataset.py
+```
