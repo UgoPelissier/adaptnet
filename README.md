@@ -18,3 +18,23 @@ mamba env create -f src/envs/adaptnet_no_builds.yml
 conda activate adaptnet
 ```
 
+### Install Meshnet and Graphnet
+Download the Meshnet and Graphnet repositories in the same folder as Adaptnet:
+```bash
+git clone https://github.com/UgoPelissier/meshnet.git
+git clone https://github.com/UgoPelissier/graphnet.git
+```
+
+Your folder should look like this:
+```
+├── .vscode
+├── graphnet
+├── meshnet
+├── scripts
+├── src
+├── .gitignore
+└── README.md
+```
+
+### Run Meshnet and Graphnet
+Follow the instructions in the README.md files of Meshnet and Graphnet to download the data and train the models. This will generate checkpoint files in the `meshnet/logs/version_$VERSION_NUMBER/checkpoints` and `graphnet/logs/version_$VERSION_NUMBER/checkpoints` folders.
