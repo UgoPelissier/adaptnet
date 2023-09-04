@@ -14,7 +14,7 @@ Both models are based on the [PyTorch Geometric](https://pytorch-geometric.readt
 ```bash
 module load conda
 module load artifactory
-mamba env create -f envs/adaptnet_no_builds.yml
+mamba env create -f src/envs/adaptnet_no_builds.yml
 conda activate adaptnet
 ```
 
