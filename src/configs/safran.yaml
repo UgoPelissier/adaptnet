@@ -1,6 +1,6 @@
 wdir: /home/upelissier/30-Code/
-predict_dir: /home/upelissier/30-Code/predict/
-save_dir: /data/users/upelissier/30-Code/predict/
+predict_dir: /home/upelissier/30-Code/src/
+save_dir: /data/users/upelissier/30-Code/src/
 name: stokes_500
 save_folder: results
 device: cuda:0

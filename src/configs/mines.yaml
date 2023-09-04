@@ -1,6 +1,6 @@
 wdir: /home/eleve05/adaptnet
-predict_dir: /home/eleve05/adaptnet/predict/
-save_dir: /home/eleve05/adaptnet/predict/
+predict_dir: /home/eleve05/adaptnet/src/
+save_dir: /home/eleve05/adaptnet/src/
 name: 500
 save_folder: results
 device: cuda:0

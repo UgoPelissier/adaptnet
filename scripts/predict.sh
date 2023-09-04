@@ -1,3 +1,3 @@
 clear
 cd $PYTHONPATH
-python predict/main.py
+python src/main.py

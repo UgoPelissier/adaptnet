@@ -17,3 +17,4 @@ module load artifactory
 mamba env create -f envs/adaptnet_no_builds.yml
 conda activate adaptnet
 ```
+

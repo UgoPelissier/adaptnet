@@ -15,9 +15,9 @@ if __name__ == '__main__':
     start_time = time.time()
 
     # load config file
-    with open('predict/configs/mines.yaml', 'r') as f:
+    with open('src/configs/mines.yaml', 'r') as f:
         config = yaml.safe_load(f)
-    print(f'Loaded config file from predict/configs/mines.yaml')
+    print(f'Loaded config file from src/configs/mines.yaml')
     # add path to python path
     sys.path.append(config['wdir'])
 
