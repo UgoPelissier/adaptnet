@@ -182,6 +182,14 @@ if __name__ == '__main__':
         std=std_vec_y_train
     )
 
+    # Save prediction to txt file
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'txt'), exist_ok=True)
+    with open(osp.join(config['save_dir'], config['save_folder'], 'txt', 'cad_{:03d}.txt'.format(config["name"])), 'w') as f:
+        for i in range(pred.shape[0]):
+            f.write('{:.6f}\n'.format(pred[i][0]))
+
+    print('Prediction saved in {}/txt/cad_{:03d}.txt\n'.format(osp.join(config['save_dir'], config['save_folder']), config["name"]))
+
     # save mesh
     os.makedirs(osp.join(config['save_dir'], config['save_folder']), exist_ok=True)
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
@@ -196,14 +204,20 @@ if __name__ == '__main__':
 
     print('GraphNet...')
     # read mesh
-    mesh = meshio.read(osp.join(config['save_dir'], config['save_folder'], 'vtk', 'mesh_{:03d}.vtk'.format(config["name"])))
+    mesh = meshio.read(osp.join(config['save_dir'], config['save_folder'], 'vtk', 'cad_{:03d}.vtk'.format(config["name"])))
 
-    # node type
     node_type = torch.zeros(mesh.points.shape[0])
-    for i in range(mesh.cells[0].data.shape[0]):
-        for j in range(mesh.cells[0].data.shape[1]):
-            node_type[mesh.cells[0].data[i,j]] = int(mesh.cell_data['CellEntityIds'][1][i]) - 1
-            
+    for i in range(mesh.cells[1].data.shape[0]):
+        for j in range(mesh.cells[1].data.shape[1]-1):
+            if (config['meshnet']['dim'] == 2):
+                node_type[mesh.cells[1].data[i,j]] = mesh.cell_data['CellEntityIds'][1][i][0]
+            elif (config['meshnet']['dim'] == 3):
+                if (mesh.cell_data['CellEntityIds'][0][i] == 31) or (mesh.cell_data['CellEntityIds'][0][i] == 32):
+                    node_type[mesh.cells[0].data[i,j]] = 3
+                else:
+                    node_type[mesh.cells[0].data[i,j]] = mesh.cell_data['CellEntityIds'][0][i][0]
+            else:
+                raise ValueError("The dimension must be either 2 or 3.")
     node_type_one_hot = torch.nn.functional.one_hot(node_type.long(), num_classes=NodeType.SIZE)
 
     # get initial velocity
@@ -215,7 +229,6 @@ if __name__ == '__main__':
         v_0[mask] = torch.Tensor([config['graphnet']['u_0'], config['graphnet']['v_0'], config['graphnet']['w_0']])
     else:
         raise ValueError("The dimension must be either 2 or 3.")
-    v_0[mask] = torch.Tensor([1.0, 0.0])
 
     # get features
     x = torch.cat((v_0, node_type_one_hot),dim=-1).type(torch.float)
@@ -260,12 +273,29 @@ if __name__ == '__main__':
     # save solution
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtu'), exist_ok=True)
 
-    mesh = meshio.Mesh(
-            points=mesh_processed.mesh_pos.cpu().numpy(),
-            cells={"triangle": mesh_processed.cells.cpu().numpy()},
-            point_data={'u_pred': pred[:,0].detach().cpu().numpy(),
-                        'v_pred': pred[:,1].detach().cpu().numpy()}
-        )
+    point_data={
+        'u_pred': pred[:,0].detach().cpu().numpy(),
+        'v_pred': pred[:,1].detach().cpu().numpy()
+        }
+
+    if (config['meshnet']['dim']==2):
+        mesh = meshio.Mesh(
+                points=mesh_processed.mesh_pos.cpu().numpy(),
+                cells={"triangle": mesh_processed.cells.cpu().numpy()},
+                point_data={'u_pred': pred[:,0].detach().cpu().numpy(),
+                            'v_pred': pred[:,1].detach().cpu().numpy()}
+            )
+    elif (config['meshnet']['dim']==3):
+        point_data['w_pred'] = pred[:,2].detach().cpu().numpy()
+        mesh = meshio.Mesh(
+                points=mesh_processed.mesh_pos.cpu().numpy(),
+                cells={"tetra": mesh_processed.cells.cpu().numpy()},
+                point_data={'u_pred': pred[:,0].detach().cpu().numpy(),
+                            'v_pred': pred[:,1].detach().cpu().numpy()}
+            )
+    else:
+        raise ValueError("The dimension must be either 2 or 3.")
+        
     mesh.write(osp.join(config['save_dir'], config['save_folder'], 'vtu', 'cad_{:03d}_sol.vtu'.format(config["name"])), binary=False)
 
     # save field
