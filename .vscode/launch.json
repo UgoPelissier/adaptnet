@@ -18,7 +18,7 @@
         "name": "Predict",
         "type": "python",
         "request": "launch",
-        "program": "${workspaceFolder}/predict/main.py",
+        "program": "${workspaceFolder}/src/main.py",
         "console": "integratedTerminal",
         "justMyCode": false,
         "env": {
