@@ -26,3 +26,6 @@ graphnet:
   num_layers: 15
   hidden_dim: 128
   optimizer: torch.optim.AdamW
+  u_0: 1.0
+  v_0: 0.0
+  w_0: 0.0
