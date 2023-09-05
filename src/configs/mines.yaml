@@ -5,7 +5,7 @@ name: 500 # TODO: change this to the name of your experiment
 save_folder: results
 device: cuda:0
 meshnet:
-  checkpoint_path: /home/eleve05/adaptnet/meshnet/logs/version_4/checkpoints/epoch=99-step=188000.ckpt # TODO: change this to the path of your meshnet checkpoint
+  checkpoint_path: /home/eleve05/adaptnet/meshnet/logs/version_4/checkpoints/epoch=999-step=188000.ckpt # TODO: change this to the path of your meshnet checkpoint
   wdir: /home/eleve05/adaptnet/meshnet/ # TODO: change this to your meshnet directory
   data_dir: /home/eleve05/adaptnet/meshnet/data/stokes3/ # TODO: change this to your meshnet data directory
   logs: /home/eleve05/adaptnet/meshnet/logs/ # TODO: change this to your meshnet logs directory
