@@ -1,14 +1,14 @@
-wdir: /home/eleve05/adaptnet
-predict_dir: /home/eleve05/adaptnet/src/
-save_dir: /home/eleve05/adaptnet/src/
-name: 500
+wdir: /home/eleve05/adaptnet # TODO: change this to your adaptnet directory
+predict_dir: /home/eleve05/adaptnet/src/ # TODO: change this accordingly
+save_dir: /home/eleve05/adaptnet/src/ # TODO: change this accordingly
+name: 500 # TODO: change this to the name of your experiment
 save_folder: results
 device: cuda:0
 meshnet:
-  checkpoint_path: /home/eleve05/adaptnet/meshnet/logs/version_1/checkpoints/epoch=99-step=2400.ckpt
-  wdir: /home/eleve05/adaptnet/meshnet/
-  data_dir: /home/eleve05/adaptnet/meshnet/data/stokes2/
-  logs: /home/eleve05/adaptnet/meshnet/logs/
+  checkpoint_path: /home/eleve05/adaptnet/meshnet/logs/version_1/checkpoints/epoch=99-step=2400.ckpt # TODO: change this to the path of your meshnet checkpoint
+  wdir: /home/eleve05/adaptnet/meshnet/ # TODO: change this to your meshnet directory
+  data_dir: /home/eleve05/adaptnet/meshnet/data/stokes2/ # TODO: change this to your meshnet data directory
+  logs: /home/eleve05/adaptnet/meshnet/logs/ # TODO: change this to your meshnet logs directory
   dim: 2
   num_layers: 15
   input_dim_node: 5
@@ -17,11 +17,11 @@ meshnet:
   output_dim: 1
   optimizer: torch.optim.AdamW
 graphnet:
-  checkpoint_path: /home/eleve05/adaptnet/graphnet/logs/version_8/checkpoints/epoch=999-step=188000.ckpt
-  dir: /home/eleve05/adaptnet/
-  wdir: /home/eleve05/adaptnet/graphnet/
-  data_dir: /home/eleve05/adaptnet/graphnet/data/stokes2/
-  logs: /home/eleve05/adaptnet/graphnet/logs/
+  checkpoint_path: /home/eleve05/adaptnet/graphnet/logs/version_8/checkpoints/epoch=999-step=188000.ckpt # TODO: change this to the path of your graphnet checkpoint
+  dir: /home/eleve05/adaptnet/ # TODO: change this to your adaptnet directory
+  wdir: /home/eleve05/adaptnet/graphnet/ # TODO: change this to your graphnet directory
+  data_dir: /home/eleve05/adaptnet/graphnet/data/stokes2/ # TODO: change this to your graphnet data directory
+  logs: /home/eleve05/adaptnet/graphnet/logs/ # TODO: change this to your graphnet logs directory
   dim: 2
   num_layers: 15
   input_dim_node: 7
