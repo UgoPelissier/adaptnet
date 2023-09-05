@@ -54,10 +54,7 @@ if __name__ == '__main__':
         logs=config['graphnet']['logs'],
         dim=config['graphnet']['dim'],
         num_layers=config['graphnet']['num_layers'],
-        input_dim_node=config['graphnet']['input_dim_node'],
-        input_dim_edge=config['graphnet']['input_dim_edge'],
         hidden_dim=config['graphnet']['hidden_dim'],
-        output_dim=config['graphnet']['output_dim'],
         optimizer=config['graphnet']['optimizer'],
     )
     print(f'Loaded GraphNet from {config["graphnet"]["checkpoint_path"]}\n')
@@ -72,18 +69,49 @@ if __name__ == '__main__':
         # extract points, lines and circles
         points = [line for line in lines if line.startswith('Point')]
         lines__ = [line for line in lines if line.startswith('Line')]
-        physical_curves = [line for line in lines if line.startswith('Physical Curve')]
         circles = [line for line in lines if line.startswith('Ellipse')]
+        extrudes = [line for line in lines if line.startswith('Extrude')]
+        physical_curves = [line for line in lines if line.startswith('Physical Curve')]
 
         # extract coordinates and mesh size
+        points_id = torch.Tensor([int(line.split('(')[1].split(')')[0]) for line in points]).long()
+        _, indices = torch.sort(points_id)
         points = torch.Tensor([[float(p) for p in line.split('{')[1].split('}')[0].split(',')] for line in points])
+        points = points[indices]
         y = points[:, -1]
         points = points[:, :-1]
 
         # extract edges
+        lines_id = torch.Tensor([int(line.split('(')[1].split(')')[0]) for line in lines__]).long()
         lines__ = torch.Tensor([[int(p) for p in line.split('{')[1].split('}')[0].split(',')] for line in lines__]).long()
+        circles_id = torch.Tensor([int(line.split('(')[1].split(')')[0]) for line in circles]).long()
         circles = torch.Tensor([[int(p) for p in line.split('{')[1].split('}')[0].split(',')] for line in circles]).long()[:,[0,2]]
-        edges = torch.cat([lines__, circles], dim=0) -1
+        edges_id = torch.cat([lines_id, circles_id], dim=0) - 1
+        _, indices = torch.sort(edges_id)
+        edges = torch.cat([lines__, circles], dim=0)-1
+        edges = edges[indices]
+
+        # add extruded points and edges
+        for extrude in extrudes:
+            z_extrude = float(extrude.split('}')[0].split(',')[-1])
+            extruded_curves_id = torch.Tensor([int(extrude.split('{')[3:][i].split('}')[0]) for i in range(len(extrude.split('{')[3:]))]).long() - 1
+            extruded_points_id = []
+            new_extruded_points_id = []
+            for id in extruded_curves_id:
+                for i in edges[id]:
+                    if not i in extruded_points_id:
+                        extruded_points_id.append(i)
+                        new_extruded_points_id.append(len(points))
+                        points = torch.cat([points, torch.Tensor([points[i,0], points[i,1], z_extrude]).unsqueeze(0)], dim=0)
+                        y = torch.cat([y, torch.Tensor([y[i]])], dim=0)
+            extruded_points_id = torch.Tensor(extruded_points_id).long()
+            new_extruded_points_id = torch.Tensor(new_extruded_points_id).long()
+
+            new_extruded_curves = edges[extruded_curves_id]
+            for i in range(len(extruded_points_id)):
+                new_extruded_curves = torch.where(new_extruded_curves == extruded_points_id[i], new_extruded_points_id[i], new_extruded_curves)
+            extruded_connexion = torch.cat([extruded_points_id.unsqueeze(dim=1), new_extruded_points_id.unsqueeze(dim=1)], dim=1)
+            edges = torch.cat([edges, extruded_connexion, new_extruded_curves], dim=0)
 
         count = 0
         for i in range(points.shape[0]):
@@ -155,6 +183,7 @@ if __name__ == '__main__':
     )
 
     # save mesh
+    os.makedirs(osp.join(config['save_dir'], config['save_folder']), exist_ok=True)
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
     
     meshnet.generate_mesh(
@@ -178,19 +207,25 @@ if __name__ == '__main__':
     node_type_one_hot = torch.nn.functional.one_hot(node_type.long(), num_classes=NodeType.SIZE)
 
     # get initial velocity
-    v_0 = torch.zeros(mesh.points.shape[0], 2)
+    v_0 = torch.zeros(mesh.points.shape[0], config['graphnet']['dim'])
     mask = (node_type.long())==torch.tensor(NodeType.INFLOW)
+    if (config['graphnet']['dim'] == 2):
+        v_0[mask] = torch.Tensor([config['graphnet']['u_0'], config['graphnet']['v_0']])
+    elif (config['graphnet']['dim'] == 3):
+        v_0[mask] = torch.Tensor([config['graphnet']['u_0'], config['graphnet']['v_0'], config['graphnet']['w_0']])
+    else:
+        raise ValueError("The dimension must be either 2 or 3.")
     v_0[mask] = torch.Tensor([1.0, 0.0])
 
     # get features
     x = torch.cat((v_0, node_type_one_hot),dim=-1).type(torch.float)
 
     # get edge indices in COO format
-    edge_index = triangles_to_edges(torch.Tensor(mesh.cells[1].data)).long()
+    edge_index = triangles_to_edges(dim=config['meshnet']['dim'], faces=torch.Tensor(mesh.cells[1].data)).long()
 
     # get edge attributes
-    u_i = mesh.points[edge_index[0]][:,:2]
-    u_j = mesh.points[edge_index[1]][:,:2]
+    u_i = mesh.points[edge_index[0]][:,:config['graphnet']['dim']]
+    u_j = mesh.points[edge_index[1]][:,:config['graphnet']['dim']]
     u_ij = torch.Tensor(u_i - u_j)
     u_ij_norm = torch.norm(u_ij, p=2, dim=1, keepdim=True)
     edge_attr = torch.cat((u_ij, u_ij_norm),dim=-1).type(torch.float)
@@ -204,14 +239,6 @@ if __name__ == '__main__':
         v_0=v_0.to(config['device']),
         name=config['name']
     )
-
-    # normalize node features
-    mean_vec_x = torch.sum(x, dim = 0)/x.shape[0]
-    std_vec_x = torch.maximum(torch.sqrt(torch.sum(x**2, dim = 0) / x.shape[0] - mean_vec_x**2), torch.tensor(1e-8))
-
-    # normalize edge features
-    mean_vec_edge = torch.sum(edge_attr, dim = 0)/edge_attr.shape[0]
-    std_vec_edge = torch.maximum(torch.sqrt(torch.sum(edge_attr**2, dim = 0) / edge_attr.shape[0] - mean_vec_edge**2), torch.tensor(1e-8))
 
     # load stats
     train_stats, val_stats, test_stats = graphnet_stats.load_stats(config['graphnet']['data_dir'], torch.device(config['device']))
