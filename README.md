@@ -67,3 +67,10 @@ and put your CAD file inside it. For instance, `src` folder could look like this
     ├── main.py
     └── dataset.py
 ```
+
+Don't forget to open the `src/configs/{$ENV_NAME}.yaml` file and change the paths according to your setup.
+
+Then, run Adaptnet:
+```bash
+bash ./scripts/predict.sh env=$ENV_NAME (mines or safran)
+```
