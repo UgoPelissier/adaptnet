@@ -1,14 +1,17 @@
 clear
 
-for arg in "$@"
+if [ "$1" == "-h" ]; then
+    echo "Usage: ./stokes2.sh -c <c>"
+    echo "c: Configuration file"
+    exit 0
+fi
+
+while getopts c: flag
 do
-   key=$(echo $arg | cut -f1 -d=)
-
-   key_length=${#key}
-   value="${arg:$key_length+1}"
-
-   export "$key"="$value"
+    case "${flag}" in
+        c) c=${OPTARG};;
+    esac
 done
 
 cd $PYTHONPATH
-python graphnet/main.py fit -c graphnet/configs/${env}.yaml
+python graphnet/main.py fit -c graphnet/configs/${c}.yaml
