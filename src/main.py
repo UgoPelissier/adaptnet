@@ -121,6 +121,8 @@ if __name__ == '__main__':
     
     print('Done\n')
 
+    exit(0)
+
     print('GraphNet...')
     # read mesh
     mesh = meshio.read(osp.join(config['save_dir'], config['save_folder'], 'vtk', 'cad_{:03d}.vtk'.format(config["name"])))
