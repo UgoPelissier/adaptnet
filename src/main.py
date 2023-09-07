@@ -7,7 +7,7 @@ from torch_geometric.data import Data
 import meshio
 import time
 
-from utils.utils import node_type, triangles_to_edges, write_field
+from utils.utils import node_type, process_file_2d, process_file_3d, triangles_to_edges, write_field
 
 if __name__ == '__main__':
     print('*** ADAPTNET ***\n')
@@ -25,6 +25,7 @@ if __name__ == '__main__':
 
     # import modules
     from meshnet.model.module import MeshNet
+    from meshnet.utils.utils import generate_mesh_2d, generate_mesh_3d
     import meshnet.utils.stats as meshnet_stats
     from graphnet.model.module import GraphNet
     from graphnet.data.dataset import NodeType
@@ -60,109 +61,13 @@ if __name__ == '__main__':
     print(f'Loaded GraphNet from {config["graphnet"]["checkpoint_path"]}\n')
 
     print('MeshNet...')
-    with open(osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo'.format(config['name'])), 'r') as f:
-        # read lines and remove comments
-        lines = f.readlines()
-        lines = [line.strip() for line in lines]
-        lines = [line for line in lines if not (line.startswith('//') or line.startswith('SetFactory'))]
-
-        # extract points, lines and circles
-        points = [line for line in lines if line.startswith('Point')]
-        lines__ = [line for line in lines if line.startswith('Line')]
-        circles = [line for line in lines if line.startswith('Ellipse')]
-        extrudes = [line for line in lines if line.startswith('Extrude')]
-        physical_curves = [line for line in lines if line.startswith('Physical Curve')]
-
-        # extract coordinates and mesh size
-        points_id = torch.Tensor([int(line.split('(')[1].split(')')[0]) for line in points]).long()
-        _, indices = torch.sort(points_id)
-        points = torch.Tensor([[float(p) for p in line.split('{')[1].split('}')[0].split(',')] for line in points])
-        points = points[indices]
-        y = points[:, -1]
-        points = points[:, :-1]
-
-        # extract edges
-        lines_id = torch.Tensor([int(line.split('(')[1].split(')')[0]) for line in lines__]).long()
-        lines__ = torch.Tensor([[int(p) for p in line.split('{')[1].split('}')[0].split(',')] for line in lines__]).long()
-        circles_id = torch.Tensor([int(line.split('(')[1].split(')')[0]) for line in circles]).long()
-        circles = torch.Tensor([[int(p) for p in line.split('{')[1].split('}')[0].split(',')] for line in circles]).long()[:,[0,2]]
-        edges_id = torch.cat([lines_id, circles_id], dim=0) - 1
-        _, indices = torch.sort(edges_id)
-        edges = torch.cat([lines__, circles], dim=0)-1
-        edges = edges[indices]
-
-        # add extruded points and edges
-        for extrude in extrudes:
-            z_extrude = float(extrude.split('}')[0].split(',')[-1])
-            extruded_curves_id = torch.Tensor([int(extrude.split('{')[3:][i].split('}')[0]) for i in range(len(extrude.split('{')[3:]))]).long() - 1
-            extruded_points_id = []
-            new_extruded_points_id = []
-            for id in extruded_curves_id:
-                for i in edges[id]:
-                    if not i in extruded_points_id:
-                        extruded_points_id.append(i)
-                        new_extruded_points_id.append(len(points))
-                        points = torch.cat([points, torch.Tensor([points[i,0], points[i,1], z_extrude]).unsqueeze(0)], dim=0)
-                        y = torch.cat([y, torch.Tensor([y[i]])], dim=0)
-            extruded_points_id = torch.Tensor(extruded_points_id).long()
-            new_extruded_points_id = torch.Tensor(new_extruded_points_id).long()
-
-            new_extruded_curves = edges[extruded_curves_id]
-            for i in range(len(extruded_points_id)):
-                new_extruded_curves = torch.where(new_extruded_curves == extruded_points_id[i], new_extruded_points_id[i], new_extruded_curves)
-            extruded_connexion = torch.cat([extruded_points_id.unsqueeze(dim=1), new_extruded_points_id.unsqueeze(dim=1)], dim=1)
-            edges = torch.cat([edges, extruded_connexion, new_extruded_curves], dim=0)
-
-        count = 0
-        for i in range(points.shape[0]):
-            if not (i-count) in edges:
-                points = torch.cat([points[:i-count], points[i-count+1:]], dim=0)
-                y = torch.cat([y[:i-count], y[i-count+1:]], dim=0)
-                edges = edges - 1*(edges>(i-count))
-                count += 1
-
-        receivers = torch.min(edges, dim=1).values
-        senders = torch.max(edges, dim=1).values
-        packed_edges = torch.stack([senders, receivers], dim=1)
-        # remove duplicates and unpack
-        unique_edges, permutation = torch.unique(packed_edges, return_inverse=True, dim=0)
-        senders, receivers = unique_edges[:, 0], unique_edges[:, 1]
-        # create two-way connectivity
-        edge_index = torch.stack([torch.cat((senders, receivers), dim=0), torch.cat((receivers, senders), dim=0)], dim=0)
-
-        # extract node types
-        edge_types = torch.zeros(edges.shape[0], dtype=torch.long)
-        for curve in physical_curves:
-            label = curve.split('(')[1].split('"')[1]
-            lines = curve.split('{')[1].split('}')[0].split(',')
-            for line in lines:
-                edge_types[int(line)-1] = node_type(label)
-        tmp = torch.zeros(edges.shape[0], dtype=torch.long)
-        for i in range(len(permutation)):
-            tmp[permutation[i]] = edge_types[i]
-        edge_types = torch.cat((tmp, tmp), dim=0)
-        edge_types_one_hot = torch.nn.functional.one_hot(edge_types.long(), num_classes=NodeType.SIZE)
-
-        # get edge attributes
-        u_i = points[edge_index[0]][:,:2]
-        u_j = points[edge_index[1]][:,:2]
-        u_ij = torch.Tensor(u_i - u_j)
-        u_ij_norm = torch.norm(u_ij, p=2, dim=1, keepdim=True)
-        edge_attr = torch.cat((u_ij, u_ij_norm, edge_types_one_hot),dim=-1).type(torch.float)
-
-        # get node attributes
-        x = torch.zeros(points.shape[0], NodeType.SIZE)
-        for i in range(edge_index.shape[0]):
-            for j in range(edge_index.shape[1]):
-                x[edge_index[i,j], edge_types[j]] = 1.0
-
-        processed_cad = Data(
-            x=x.to(config['device']),
-            edge_index=edge_index.to(config['device']),
-            edge_attr=edge_attr.to(config['device']),
-            y=y.to(config['device']),
-            name=torch.Tensor([config['name']]).long().to(config['device'])
-        )
+    # process cad
+    if (config['meshnet']['dim'] == 2):
+        processed_cad = process_file_2d(config=config)
+    elif (config['meshnet']['dim'] == 3):
+        processed_cad = process_file_3d(config=config)
+    else:
+        raise ValueError("The dimension must be either 2 or 3.")
 
     # load stats
     train_stats, val_stats, test_stats = meshnet_stats.load_stats(config['meshnet']['data_dir'], torch.device(config['device']))
@@ -188,18 +93,32 @@ if __name__ == '__main__':
         for i in range(pred.shape[0]):
             f.write('{:.6f}\n'.format(pred[i][0]))
 
-    print('Prediction saved in {}/txt/cad_{:03d}.txt\n'.format(osp.join(config['save_dir'], config['save_folder']), config["name"]))
+    print('Prediction saved in {}/txt/cad_{:03d}.txt'.format(osp.join(config['save_dir'], config['save_folder']), config["name"]))
 
-    # save mesh
+    # save mesh directory
     os.makedirs(osp.join(config['save_dir'], config['save_folder']), exist_ok=True)
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh'), exist_ok=True)
+
+    # save mesh
+    if (config['meshnet']['dim'] == 2):
+        generate_mesh_2d(
+            cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo'.format(config['name'])),
+            batch=processed_cad,
+            pred=pred,
+            save_dir=osp.join(config['save_dir'], config['save_folder'])
+        )
+    elif (config['meshnet']['dim'] == 3):
+        generate_mesh_3d(
+            cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo'.format(config['name'])),
+            batch=processed_cad,
+            pred=pred,
+            save_dir=osp.join(config['save_dir'], config['save_folder'])
+        )
+    else:
+        raise ValueError("The dimension must be either 2 or 3.")
+    print('Mesh saved in {}/mesh/cad_{:03d}.msh'.format(osp.join(config['save_dir'], config['save_folder']), config["name"]))
     
-    meshnet.generate_mesh(
-        cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo'.format(config['name'])),
-        batch=processed_cad,
-        pred=pred,
-        save_dir=osp.join(config['save_dir'], config['save_folder'])
-    )
     print('Done\n')
 
     print('GraphNet...')
