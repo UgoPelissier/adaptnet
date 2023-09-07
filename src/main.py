@@ -7,7 +7,9 @@ from torch_geometric.data import Data
 import meshio
 import time
 
-from utils.utils import node_type, process_file_2d, process_file_3d, triangles_to_edges, write_field
+from utils.utils import write_field
+import utils.process.meshnet as meshnet_process
+from utils.process.graphnet import triangles_to_edges, tetra_to_edges
 
 if __name__ == '__main__':
     print('*** ADAPTNET ***\n')
@@ -63,9 +65,9 @@ if __name__ == '__main__':
     print('MeshNet...')
     # process cad
     if (config['meshnet']['dim'] == 2):
-        processed_cad = process_file_2d(config=config)
+        processed_cad = meshnet_process.file_2d(config=config)
     elif (config['meshnet']['dim'] == 3):
-        processed_cad = process_file_3d(config=config)
+        processed_cad = meshnet_process.file_3d(config=config)
     else:
         raise ValueError("The dimension must be either 2 or 3.")
 
@@ -121,8 +123,6 @@ if __name__ == '__main__':
     
     print('Done\n')
 
-    exit(0)
-
     print('GraphNet...')
     # read mesh
     mesh = meshio.read(osp.join(config['save_dir'], config['save_folder'], 'vtk', 'cad_{:03d}.vtk'.format(config["name"])))
@@ -130,15 +130,7 @@ if __name__ == '__main__':
     node_type = torch.zeros(mesh.points.shape[0])
     for i in range(mesh.cells[1].data.shape[0]):
         for j in range(mesh.cells[1].data.shape[1]-1):
-            if (config['meshnet']['dim'] == 2):
-                node_type[mesh.cells[1].data[i,j]] = mesh.cell_data['CellEntityIds'][1][i][0]
-            elif (config['meshnet']['dim'] == 3):
-                if (mesh.cell_data['CellEntityIds'][0][i] == 31) or (mesh.cell_data['CellEntityIds'][0][i] == 32):
-                    node_type[mesh.cells[0].data[i,j]] = 3
-                else:
-                    node_type[mesh.cells[0].data[i,j]] = mesh.cell_data['CellEntityIds'][0][i][0]
-            else:
-                raise ValueError("The dimension must be either 2 or 3.")
+            node_type[mesh.cells[1].data[i,j]] = mesh.cell_data['CellEntityIds'][1][i][0]-1
     node_type_one_hot = torch.nn.functional.one_hot(node_type.long(), num_classes=NodeType.SIZE)
 
     # get initial velocity
@@ -155,8 +147,12 @@ if __name__ == '__main__':
     x = torch.cat((v_0, node_type_one_hot),dim=-1).type(torch.float)
 
     # get edge indices in COO format
-    edge_index = triangles_to_edges(dim=config['meshnet']['dim'], faces=torch.Tensor(mesh.cells[1].data)).long()
-
+    if (config['graphnet']['dim'] == 2):
+        edge_index = triangles_to_edges(torch.Tensor(mesh.cells[0].data)).long()
+    elif (config['graphnet']['dim'] == 3):
+        edge_index = tetra_to_edges(torch.Tensor(mesh.cells[0].data)).long()
+    else:
+        raise ValueError("The dimension must be either 2 or 3.")
     # get edge attributes
     u_i = mesh.points[edge_index[0]][:,:config['graphnet']['dim']]
     u_j = mesh.points[edge_index[1]][:,:config['graphnet']['dim']]
