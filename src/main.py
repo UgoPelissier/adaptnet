@@ -9,7 +9,7 @@ import time
 
 from utils.utils import write_field
 import utils.process.meshnet as meshnet_process
-from utils.process.graphnet import triangles_to_edges, tetra_to_edges
+import utils.process.graphnet as graphnet_process
 
 if __name__ == '__main__':
     print('*** ADAPTNET ***\n')
@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
     print('Prediction saved in {}/txt/cad_{:03d}.txt'.format(osp.join(config['save_dir'], config['save_folder']), config["name"]))
 
-    # save mesh directory
+    # create mesh directories
     os.makedirs(osp.join(config['save_dir'], config['save_folder']), exist_ok=True)
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh'), exist_ok=True)
@@ -125,50 +125,7 @@ if __name__ == '__main__':
 
     print('GraphNet...')
     # read mesh
-    mesh = meshio.read(osp.join(config['save_dir'], config['save_folder'], 'vtk', 'cad_{:03d}.vtk'.format(config["name"])))
-
-    node_type = torch.zeros(mesh.points.shape[0])
-    for i in range(mesh.cells[1].data.shape[0]):
-        for j in range(mesh.cells[1].data.shape[1]-1):
-            node_type[mesh.cells[1].data[i,j]] = mesh.cell_data['CellEntityIds'][1][i][0]-1
-    node_type_one_hot = torch.nn.functional.one_hot(node_type.long(), num_classes=NodeType.SIZE)
-
-    # get initial velocity
-    v_0 = torch.zeros(mesh.points.shape[0], config['graphnet']['dim'])
-    mask = (node_type.long())==torch.tensor(NodeType.INFLOW)
-    if (config['graphnet']['dim'] == 2):
-        v_0[mask] = torch.Tensor([config['graphnet']['u_0'], config['graphnet']['v_0']])
-    elif (config['graphnet']['dim'] == 3):
-        v_0[mask] = torch.Tensor([config['graphnet']['u_0'], config['graphnet']['v_0'], config['graphnet']['w_0']])
-    else:
-        raise ValueError("The dimension must be either 2 or 3.")
-
-    # get features
-    x = torch.cat((v_0, node_type_one_hot),dim=-1).type(torch.float)
-
-    # get edge indices in COO format
-    if (config['graphnet']['dim'] == 2):
-        edge_index = triangles_to_edges(torch.Tensor(mesh.cells[0].data)).long()
-    elif (config['graphnet']['dim'] == 3):
-        edge_index = tetra_to_edges(torch.Tensor(mesh.cells[0].data)).long()
-    else:
-        raise ValueError("The dimension must be either 2 or 3.")
-    # get edge attributes
-    u_i = mesh.points[edge_index[0]][:,:config['graphnet']['dim']]
-    u_j = mesh.points[edge_index[1]][:,:config['graphnet']['dim']]
-    u_ij = torch.Tensor(u_i - u_j)
-    u_ij_norm = torch.norm(u_ij, p=2, dim=1, keepdim=True)
-    edge_attr = torch.cat((u_ij, u_ij_norm),dim=-1).type(torch.float)
-
-    mesh_processed = Data(
-        x=x.to(config['device']),
-        edge_index=edge_index.to(config['device']),
-        edge_attr=edge_attr.to(config['device']),
-        cells=torch.Tensor(mesh.cells[1].data).to(config['device']),
-        mesh_pos=torch.Tensor(mesh.points).to(config['device']),
-        v_0=v_0.to(config['device']),
-        name=config['name']
-    )
+    processed_mesh = graphnet_process.file(config=config)
 
     # load stats
     train_stats, val_stats, test_stats = graphnet_stats.load_stats(config['graphnet']['data_dir'], torch.device(config['device']))
@@ -177,7 +134,7 @@ if __name__ == '__main__':
     # predict velocity
     pred = graphnet_stats.unnormalize(
             data=graphnet(
-                batch=mesh_processed,
+                batch=processed_mesh,
                 split='predict',
                 mean_vec_x_predict=mean_vec_x_train,
                 std_vec_x_predict=std_vec_x_train,
@@ -197,16 +154,16 @@ if __name__ == '__main__':
 
     if (config['meshnet']['dim']==2):
         mesh = meshio.Mesh(
-                points=mesh_processed.mesh_pos.cpu().numpy(),
-                cells={"triangle": mesh_processed.cells.cpu().numpy()},
+                points=processed_mesh.mesh_pos.cpu().numpy(),
+                cells={"triangle": processed_mesh.cells.cpu().numpy()},
                 point_data={'u_pred': pred[:,0].detach().cpu().numpy(),
                             'v_pred': pred[:,1].detach().cpu().numpy()}
             )
     elif (config['meshnet']['dim']==3):
         point_data['w_pred'] = pred[:,2].detach().cpu().numpy()
         mesh = meshio.Mesh(
-                points=mesh_processed.mesh_pos.cpu().numpy(),
-                cells={"tetra": mesh_processed.cells.cpu().numpy()},
+                points=processed_mesh.mesh_pos.cpu().numpy(),
+                cells={"tetra": processed_mesh.cells.cpu().numpy()},
                 point_data={'u_pred': pred[:,0].detach().cpu().numpy(),
                             'v_pred': pred[:,1].detach().cpu().numpy()}
             )
