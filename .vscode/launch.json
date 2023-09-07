@@ -82,7 +82,7 @@
           "-c",
           "/home/eleve05/adaptnet/meshnet/configs/mines.yaml",
           "--ckpt_path",
-          "/home/eleve05/adaptnet/meshnet/logs/version_3/checkpoints/epoch=999-step=15000.ckpt",
+          "/home/eleve05/adaptnet/meshnet/logs/version_5/checkpoints/epoch=499-step=94000.ckpt",
         ]
       },
       {
