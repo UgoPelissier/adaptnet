@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-ckpt_path=/home/eleve05/adaptnet/meshnet/logs/version_6/checkpoints/epoch=999-step=188000.ckpt
+ckpt_path=/home/eleve05/adaptnet/meshnet/logs/version_7/checkpoints/epoch=999-step=188000.ckpt
 
 clear
 
