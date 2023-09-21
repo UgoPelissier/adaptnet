@@ -124,101 +124,138 @@ def file_2d(
 def file_3d(
         config: dict
 ) -> None:
-    with open(osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo'.format(config['name'])), 'r') as f:
+    with open(osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo_unrolled'.format(config['name'])), 'r') as f:
         # read lines and remove comments
         lines = f.readlines()
-        lines = [line.strip() for line in lines]
-        lines = [line for line in lines if not (line.startswith('//') or line.startswith('SetFactory'))]
+        lines = [line.replace(' ', '') for line in lines]
 
-        # extract geometries
-        box = [line for line in lines if line.startswith('Box')]
-        cylinders = [line for line in lines if line.startswith('Cylinder')]
-
-        # Infer number of points and edges
-        n_points = 8 + 6*len(cylinders)
-        points = torch.zeros(n_points, 3)
-
-        n_edges = 12 + 9*len(cylinders)
-        edges = torch.zeros(n_edges, 2, dtype=torch.long)
-
-        # extract coordinates from geometries
-        box = [float(box[0].split('{')[1].split('}')[0].split(', ')[i]) for i in range(len(box[0].split('{')[1].split('}')[0].split(', ')))] # [xs, ys, zs, dx, dy, dz]
-        cylinders = [[float(cylinders[j].split('{')[1].split('}')[0].split(', ')[i]) for i in range(len(cylinders[0].split('{')[1].split('}')[0].split(', '))-1)] for j in range(len(cylinders))] # [xs, ys, zs, dx, dy, dz, r]
-
-        # extract mesh sizes
-        l = float([line for line in lines if line.startswith('l')][0].split(' ')[-1].split(';')[0])
-        c = [float([line for line in lines if line.startswith('c')][i].split(' ')[-1].split(';')[0]) for i in range(len(cylinders))]
-
-        # create points, targets mesh size and edges for the box
-        points[0] = torch.Tensor([box[0], box[1], box[2]])
-        points[1] = torch.Tensor([box[0]+box[3], box[1], box[2]])
-        points[2] = torch.Tensor([box[0]+box[3], box[1]+box[4], box[2]])
-        points[3] = torch.Tensor([box[0], box[1]+box[4], box[2]])
-        points[4] = torch.Tensor([box[0], box[1], box[2]+box[5]])
-        points[5] = torch.Tensor([box[0]+box[3], box[1], box[2]+box[5]])
-        points[6] = torch.Tensor([box[0]+box[3], box[1]+box[4], box[2]+box[5]])
-        points[7] = torch.Tensor([box[0], box[1]+box[4], box[2]+box[5]])
+        # Extract mesh sizes variables
+        mesh_sizes_variables = {}
+        tmp = [line for line in lines if line.startswith("cl__")]
+        for line in tmp:
+            key = line.split('=')[0]
+            value = float(line.split('=')[-1].split(';')[0])
+            mesh_sizes_variables[key] = value
         
-        edges[0] = torch.Tensor([0, 1]).long()
-        edges[1] = torch.Tensor([1, 2]).long()
-        edges[2] = torch.Tensor([2, 3]).long()
-        edges[3] = torch.Tensor([3, 0]).long()
-        edges[4] = torch.Tensor([4, 5]).long()
-        edges[5] = torch.Tensor([5, 6]).long()
-        edges[6] = torch.Tensor([6, 7]).long()
-        edges[7] = torch.Tensor([7, 4]).long()
-        edges[8] = torch.Tensor([0, 4]).long()
-        edges[9] = torch.Tensor([1, 5]).long()
-        edges[10] = torch.Tensor([2, 6]).long()
-        edges[11] = torch.Tensor([3, 7]).long()
+        # Extract coordinates and mesh sizes
+        convert_points = {}
+        coo = {}
+        mesh_sizes = {}
+        tmp = [line for line in lines if line.startswith("Point(")]
+        i=0
+        for line in tmp:
+            key = line.split('(')[1].split(')')[0]
+            convert_points[key] = i
+            value = line.split('{')[1].split('}')[0].split(',')
+            coo[key] = [float(value[i]) for i in range(3)]
+            if (len(value)>3):
+                mesh_sizes[key] = mesh_sizes_variables[value[-1]]
+            i+=1
+        points = torch.Tensor(list(coo.values()))
 
-        # create points and edges for the cylinders
-        for i in range(len(cylinders)):
-            points[8+6*i] = torch.Tensor([cylinders[i][0]+cylinders[i][-1], cylinders[i][1], cylinders[i][2]])
-            points[8+6*i+1] = torch.Tensor([cylinders[i][0]+np.cos(2*np.pi/3)*cylinders[i][-1], cylinders[i][1]+np.sin(2*np.pi/3)*cylinders[i][-1], cylinders[i][2]])
-            points[8+6*i+2] = torch.Tensor([cylinders[i][0]+np.cos(4*np.pi/3)*cylinders[i][-1], cylinders[i][1]+np.sin(4*np.pi/3)*cylinders[i][-1], cylinders[i][2]])
-            points[8+6*i+3] = torch.Tensor([cylinders[i][0]+cylinders[i][-1], cylinders[i][1], cylinders[i][2]+cylinders[i][5]])
-            points[8+6*i+4] = torch.Tensor([cylinders[i][0]+np.cos(2*np.pi/3)*cylinders[i][-1], cylinders[i][1]+np.sin(2*np.pi/3)*cylinders[i][-1], cylinders[i][2]+cylinders[i][5]])
-            points[8+6*i+5] = torch.Tensor([cylinders[i][0]+np.cos(4*np.pi/3)*cylinders[i][-1], cylinders[i][1]+np.sin(4*np.pi/3)*cylinders[i][-1], cylinders[i][2]+cylinders[i][5]])
+        # Convert mesh sizes to tensor
+        y = torch.Tensor(list(mesh_sizes.values()))
+        indices = torch.Tensor([convert_points[key] for key in mesh_sizes.keys()]).long()
+        points = points[indices]
+
+        # Extract edges
+        edges = {}
+        tmp = [line for line in lines if line.startswith("Line(") or line.startswith("Spline(")]
+        n_cyl = int(len([line for line in lines if line.startswith("Spline(")])/2)
+        for line in tmp:
+            key = line.split('(')[1].split(')')[0]
+            value = line.split('{')[1].split('}')[0].split(',')
+            edges[key] = value
         
-            edges[12+9*i] = torch.Tensor([8+6*i, 8+6*i+1]).long()
-            edges[12+9*i+1] = torch.Tensor([8+6*i+1, 8+6*i+2]).long()
-            edges[12+9*i+2] = torch.Tensor([8+6*i+2, 8+6*i]).long()
-            edges[12+9*i+3] = torch.Tensor([8+6*i+3, 8+6*i+4]).long()
-            edges[12+9*i+4] = torch.Tensor([8+6*i+4, 8+6*i+5]).long()
-            edges[12+9*i+5] = torch.Tensor([8+6*i+5, 8+6*i+3]).long()
-            edges[12+9*i+6] = torch.Tensor([8+6*i, 8+6*i+3]).long()
-            edges[12+9*i+7] = torch.Tensor([8+6*i+1, 8+6*i+4]).long()
-            edges[12+9*i+8] = torch.Tensor([8+6*i+2, 8+6*i+5]).long()
+        # Connectivity matrix
+        convert_edges = {}
+        connectivity = []
+        for key, value in edges.items():
+            convert_edges[key] = [len(connectivity)+i for i in range(len(value)-1)]
+            for i in range(len(value)-1):
+                connectivity.append([convert_points[value[i]], convert_points[value[i+1]]])
+        edges = torch.Tensor(connectivity).long()
+
+        # Identify edges to keep
+        keep_edges = []
+        for i in range(edges.shape[0]):
+            if ((edges[i,0] in indices) and (edges[i,1] in indices)):
+                keep_edges.append(i)
+        edges = edges[keep_edges]
+
+        # Add control edges
+        for i in range(n_cyl):
+            edges = torch.cat((edges, torch.Tensor([[7+i,0]]).long()))
+            edges = torch.cat((edges, torch.Tensor([[7+i,2]]).long()))
+            edges = torch.cat((edges, torch.Tensor([[7+i,5]]).long()))
+            edges = torch.cat((edges, torch.Tensor([[7+i,6]]).long()))
+
+            edges = torch.cat((edges, torch.Tensor([[8+n_cyl+i,1]]).long()))
+            edges = torch.cat((edges, torch.Tensor([[8+n_cyl+i,3]]).long()))
+            edges = torch.cat((edges, torch.Tensor([[8+n_cyl+i,4]]).long()))
+            edges = torch.cat((edges, torch.Tensor([[8+n_cyl+i,9]]).long()))  
 
         receivers = torch.min(edges, dim=1).values
         senders = torch.max(edges, dim=1).values
         packed_edges = torch.stack([senders, receivers], dim=1)
-        # remove duplicates and unpack
+        # Remove duplicates and unpack
         unique_edges, permutation = torch.unique(packed_edges, return_inverse=True, dim=0)
         senders, receivers = unique_edges[:, 0], unique_edges[:, 1]
-        # create two-way connectivity
-        edge_index = torch.stack([torch.cat((senders, receivers), dim=0), torch.cat((receivers, senders), dim=0)], dim=0)
+        # Create two-way connectivity
+        edge_index = torch.stack([torch.cat((senders, receivers), dim=0), torch.cat((receivers, senders), dim=0)], dim=0).long()
 
-        # extract edges labels
-        edge_types = torch.zeros(edges.shape[0], dtype=torch.long)
-        # inflow
-        edge_types[3] = NodeType.INFLOW
-        edge_types[7] = NodeType.INFLOW
-        edge_types[8] = NodeType.INFLOW
-        edge_types[11] = NodeType.INFLOW
-        # outflow
-        edge_types[1] = NodeType.OUTFLOW
-        edge_types[5] = NodeType.OUTFLOW
-        edge_types[9] = NodeType.OUTFLOW
-        edge_types[10] = NodeType.OUTFLOW
-        # walls
-        edge_types[0] = NodeType.WALL_BOUNDARY
-        edge_types[2] = NodeType.WALL_BOUNDARY
-        edge_types[4] = NodeType.WALL_BOUNDARY
-        edge_types[6] = NodeType.WALL_BOUNDARY
-        # obstacles
-        edge_types[12:] += NodeType.OBSTACLE
+        # Extract curves
+        curves = {}
+        tmp = [line for line in lines if line.startswith("CurveLoop(")]
+        tmp = [line.replace('-', '') for line in tmp]
+        for line in tmp:
+            key = line.split('(')[1].split(')')[0]
+            value = line.split('{')[1].split('}')[0].split(',')
+            curves[key] = value
+
+        # Extract surfaces
+        surfaces_edges = {}
+        tmp = [line for line in lines if line.startswith("PlaneSurface(") or line.startswith("Surface(")]
+        for line in tmp:
+            key = line.split('(')[1].split(')')[0]
+            value = line.split('{')[1].split('}')[0].split(',')
+            for i in range(len(value)):
+                if (i==0):
+                    surfaces_edges[key] = curves[value[i]][:]
+                else:
+                    surfaces_edges[key] += curves[value[i]][:]
+
+        # Extract physical groups
+        physical_groups = {}
+        tmp = [line for line in lines if line.startswith("PhysicalSurface")]
+        for line in tmp:
+            key = line.split('"')[1].split('"')[0]
+            value = line.split('{')[1].split('}')[0].split(',')
+            for i in range(len(value)):
+                for j in range(len(surfaces_edges[value[i]])):
+                    if (i==0 and j==0):
+                        physical_groups[key] = convert_edges[surfaces_edges[value[i]][j]][:]
+                    else:
+                        physical_groups[key] += convert_edges[surfaces_edges[value[i]][j]][:]
+
+        # Extract edge physical groups
+        physical_groups_order = ['WALL_Y', 'WALL_Z', 'OUTFLOW', 'INFLOW', 'OBSTACLE']
+        physical_groups_edges = [0 for i in range(len(connectivity))]
+        for key in physical_groups_order:
+            for i in range(len(physical_groups[key])):
+                if (key=='INFLOW'):
+                    physical_groups_edges[physical_groups[key][i]] = NodeType.INFLOW
+                elif (key=='OUTFLOW'):
+                    physical_groups_edges[physical_groups[key][i]] = NodeType.OUTFLOW
+                elif (key=='WALL_Y' or key=='WALL_Z'):
+                    physical_groups_edges[physical_groups[key][i]] = NodeType.WALL_BOUNDARY
+                elif (key=='OBSTACLE'):
+                    physical_groups_edges[physical_groups[key][i]] = NodeType.OBSTACLE
+                else:
+                    raise ValueError('Physical group not recognized.')
+        edge_types = torch.Tensor(physical_groups_edges).long().long()
+        edge_types = edge_types[keep_edges]
+        edge_types = torch.cat((edge_types, (NodeType.WALL_BOUNDARY*torch.ones(edges.shape[0]-edge_types.shape[0])).long().long()))
         
         # convert edges labels to edge_index format
         tmp = torch.zeros(edges.shape[0], dtype=torch.long)

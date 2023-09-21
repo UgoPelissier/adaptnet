@@ -42,6 +42,8 @@ def tetra_to_edges(faces: torch.Tensor) -> torch.Tensor:
 def file(
     config: dict
 )->Data:
+    # mesh = meshio.read(osp.join(config['save_dir'], config['save_folder'], 'vtk', 'cad_{:03d}.vtk'.format(config["name"])))
+
     mesh = meshio.read(osp.join(config['save_dir'], config['save_folder'], 'vtk', 'cad_{:03d}.vtk'.format(config["name"])))
 
     node_type = torch.zeros(mesh.points.shape[0])
@@ -53,7 +55,8 @@ def file(
         raise ValueError("The dimension must be either 2 or 3.")
     for i in range(mesh.cells[k].data.shape[0]):
         for j in range(mesh.cells[k].data.shape[1]-1):
-            node_type[mesh.cells[k].data[i,j]] = mesh.cell_data['CellEntityIds'][k][i][0]-1
+                node_type[mesh.cells[k].data[i,j]] = mesh.cell_data['CellEntityIds'][k][i][0] - 1
+
     node_type_one_hot = torch.nn.functional.one_hot(node_type.long(), num_classes=NodeType.SIZE)
 
     # get initial velocity
@@ -71,9 +74,9 @@ def file(
 
     # get edge indices in COO format
     if (config['graphnet']['dim'] == 2):
-        edge_index = triangles_to_edges(torch.Tensor(mesh.cells[0].data)).long()
+        edge_index = triangles_to_edges(torch.Tensor(mesh.cells[1-k].data)).long()
     elif (config['graphnet']['dim'] == 3):
-        edge_index = tetra_to_edges(torch.Tensor(mesh.cells[1].data)).long()
+        edge_index = tetra_to_edges(torch.Tensor(mesh.cells[1-k].data)).long()
     else:
         raise ValueError("The dimension must be either 2 or 3.")
     # get edge attributes
@@ -87,7 +90,7 @@ def file(
         x=x.to(config['device']),
         edge_index=edge_index.to(config['device']),
         edge_attr=edge_attr.to(config['device']),
-        cells=torch.Tensor(mesh.cells[1].data).to(config['device']),
+        cells=torch.Tensor(mesh.cells[1-k].data).to(config['device']),
         mesh_pos=torch.Tensor(mesh.points).to(config['device']),
         v_0=v_0.to(config['device']),
         name=config['name']

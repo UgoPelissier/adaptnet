@@ -13,8 +13,6 @@ import utils.process.graphnet as graphnet_process
 
 if __name__ == '__main__':
     print('*** ADAPTNET ***\n')
-    # time the execution
-    start_time = time.time()
 
     # load config file
     with open('src/configs/mines.yaml', 'r') as f:
@@ -62,6 +60,8 @@ if __name__ == '__main__':
     )
     print(f'Loaded GraphNet from {config["graphnet"]["checkpoint_path"]}\n')
 
+    # time the execution
+    start_time = time.time()
     print('MeshNet...')
     # process cad
     if (config['meshnet']['dim'] == 2):
@@ -100,7 +100,8 @@ if __name__ == '__main__':
     # create mesh directories
     os.makedirs(osp.join(config['save_dir'], config['save_folder']), exist_ok=True)
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh'), exist_ok=True)
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh2'), exist_ok=True)
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh3'), exist_ok=True)
 
     # save mesh
     if (config['meshnet']['dim'] == 2):
@@ -121,8 +122,9 @@ if __name__ == '__main__':
         raise ValueError("The dimension must be either 2 or 3.")
     print('Mesh saved in {}/mesh/cad_{:03d}.msh'.format(osp.join(config['save_dir'], config['save_folder']), config["name"]))
     
-    print('Done\n')
+    print(f'Done in: {time.time() - start_time:.2f}s\n')
 
+    start_time = time.time()
     print('GraphNet...')
     # read mesh
     processed_mesh = graphnet_process.file(config=config)
@@ -177,7 +179,6 @@ if __name__ == '__main__':
     write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,0], 'u_pred')
     write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,1], 'v_pred')
 
-    print('Done\n')
+    print(f'Done in: {time.time() - start_time:.2f}s\n')
 
     print(f'Predictions saved in {osp.join(config["save_dir"], config["save_folder"])}')
-    print(f'Execution time: {time.time() - start_time:.2f}s\n')
