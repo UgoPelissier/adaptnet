@@ -193,7 +193,7 @@ def file_3d(
             edges = torch.cat((edges, torch.Tensor([[8+n_cyl+i,1]]).long()))
             edges = torch.cat((edges, torch.Tensor([[8+n_cyl+i,3]]).long()))
             edges = torch.cat((edges, torch.Tensor([[8+n_cyl+i,4]]).long()))
-            edges = torch.cat((edges, torch.Tensor([[8+n_cyl+i,9]]).long()))  
+            edges = torch.cat((edges, torch.Tensor([[8+n_cyl+i,7+n_cyl]]).long()))  
 
         receivers = torch.min(edges, dim=1).values
         senders = torch.max(edges, dim=1).values
