@@ -60,6 +60,7 @@ and put your CAD file inside it. For instance, `src` folder could look like this
 └── src
     ├── configs
     └── data
+        ├── cad_500.geo_unrolled
         └── cad_500.geo
     ├── envs
     ├── utils
