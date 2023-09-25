@@ -88,7 +88,7 @@ if __name__ == '__main__':
         std=std_vec_y_train
     )
 
-    # Save prediction to txt file
+    # save prediction to txt file
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'txt'), exist_ok=True)
     with open(osp.join(config['save_dir'], config['save_folder'], 'txt', 'cad_{:03d}.txt'.format(config["name"])), 'w') as f:
         for i in range(pred.shape[0]):
