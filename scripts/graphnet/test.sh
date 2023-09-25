@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-ckpt_path=/home/eleve05/adaptnet/graphnet/logs/version_13/checkpoints/epoch=4999-step=940000.ckpt
+ckpt_path=/home/eleve05/adaptnet/graphnet/logs/version_2_old/checkpoints/epoch=4999-step=940000.ckpt
 
 clear
 
