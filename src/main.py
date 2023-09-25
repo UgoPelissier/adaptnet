@@ -95,7 +95,7 @@ if __name__ == '__main__':
     # create mesh directories
     os.makedirs(osp.join(config['save_dir'], config['save_folder']), exist_ok=True)
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh'), exist_ok=True)
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh3'), exist_ok=True)
 
     # save mesh
     if (config['meshnet']['dim'] == 2):
