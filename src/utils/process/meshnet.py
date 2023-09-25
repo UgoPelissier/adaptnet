@@ -56,7 +56,7 @@ def file(
         # Extract edges
         edges = {}
         tmp = [line for line in lines if line.startswith("Line(") or line.startswith("Spline(")]
-        n_cyl = int(len([line for line in lines if line.startswith("Spline(")])/(1+config['meshnet']['dim']))
+        n_cyl = int(len([line for line in lines if line.startswith("Spline(")])/(config['meshnet']['dim']-1))
         for line in tmp:
             key = line.split('(')[1].split(')')[0]
             value = line.split('{')[1].split('}')[0].split(',')
