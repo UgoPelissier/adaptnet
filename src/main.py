@@ -63,12 +63,8 @@ if __name__ == '__main__':
     start_time = time.time()
     print('MeshNet...')
     # process cad
-    if (config['meshnet']['dim'] == 2):
-        processed_cad = meshnet_process.file_2d(config=config)
-    elif (config['meshnet']['dim'] == 3):
-        processed_cad = meshnet_process.file_3d(config=config)
-    else:
-        raise ValueError("The dimension must be either 2 or 3.")
+    processed_cad = meshnet_process.file(config=config)
+
 
     # load stats
     train_stats, val_stats, test_stats = meshnet_stats.load_stats(config['meshnet']['data_dir'], torch.device(config['device']))
