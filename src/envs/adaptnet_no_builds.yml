@@ -1,4 +1,4 @@
-name: graphnet
+name: adaptnet
 channels:
   - pyg
   - pytorch
