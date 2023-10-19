@@ -120,7 +120,7 @@ if __name__ == '__main__':
     start_time = time.time()
     print('GraphNet...')
     # read mesh
-    processed_mesh = graphnet_process.file(config=config)
+    processed_mesh = graphnet_process.vtk(config=config)
 
     # load stats
     train_stats, val_stats, test_stats = graphnet_stats.load_stats(config['graphnet']['data_dir'], torch.device(config['device']))
