@@ -6,7 +6,7 @@ import torch
 import meshio
 import time
 
-from utils.utils import write_field
+from utils.utils import write_metric
 import utils.process.meshnet as meshnet_process
 import utils.process.graphnet as graphnet_process
 
@@ -64,7 +64,6 @@ if __name__ == '__main__':
     print('MeshNet...')
     # process cad
     processed_cad = meshnet_process.file(config=config)
-
 
     # load stats
     train_stats, val_stats, test_stats = meshnet_stats.load_stats(config['meshnet']['data_dir'], torch.device(config['device']))
@@ -144,24 +143,23 @@ if __name__ == '__main__':
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtu'), exist_ok=True)
 
     point_data={
-        'u_pred': pred[:,0].detach().cpu().numpy(),
-        'v_pred': pred[:,1].detach().cpu().numpy()
+        # 'u_pred': pred[:,0].detach().cpu().numpy(),
+        # 'v_pred': pred[:,1].detach().cpu().numpy()
+        'm_pred': pred.detach().cpu().numpy()
         }
 
     if (config['meshnet']['dim']==2):
         mesh = meshio.Mesh(
                 points=processed_mesh.mesh_pos.cpu().numpy(),
                 cells={"triangle": processed_mesh.cells.cpu().numpy()},
-                point_data={'u_pred': pred[:,0].detach().cpu().numpy(),
-                            'v_pred': pred[:,1].detach().cpu().numpy()}
+                point_data=point_data
             )
     elif (config['meshnet']['dim']==3):
-        point_data['w_pred'] = pred[:,2].detach().cpu().numpy()
+        # point_data['w_pred'] = pred[:,2].detach().cpu().numpy()
         mesh = meshio.Mesh(
                 points=processed_mesh.mesh_pos.cpu().numpy(),
                 cells={"tetra": processed_mesh.cells.cpu().numpy()},
-                point_data={'u_pred': pred[:,0].detach().cpu().numpy(),
-                            'v_pred': pred[:,1].detach().cpu().numpy()}
+                point_data=point_data
             )
     else:
         raise ValueError("The dimension must be either 2 or 3.")
@@ -170,8 +168,9 @@ if __name__ == '__main__':
 
     # save field
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'field'), exist_ok=True)
-    write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,0], 'u_pred')
-    write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,1], 'v_pred')
+    write_metric(osp.join(config['save_dir'], config['save_folder'], 'field'), pred.squeeze().detach().cpu().numpy(), 'm_pred')
+    # write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,0], 'u_pred')
+    # write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,1], 'v_pred')
 
     print(f'Done in: {time.time() - start_time:.2f}s\n')
 
