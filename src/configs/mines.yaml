@@ -1,7 +1,7 @@
 wdir: /home/eleve05/adaptnet # TODO: change this to your adaptnet directory
 predict_dir: /home/eleve05/adaptnet/src/ # TODO: change this accordingly
 save_dir: /home/eleve05/adaptnet/src/ # TODO: change this accordingly
-name: 500 # TODO: change this to the name of your experiment
+name: 106 # TODO: change this to the name of your experiment
 save_folder: results
 device: cuda:0
 meshnet:
@@ -17,7 +17,7 @@ meshnet:
   output_dim: 1
   optimizer: torch.optim.AdamW
 graphnet:
-  checkpoint_path: /home/eleve05/adaptnet/graphnet/logs/version_2/checkpoints/epoch=9999-step=940000.ckpt # TODO: change this to the path of your graphnet checkpoint
+  checkpoint_path: /home/eleve05/adaptnet/graphnet/logs/version_4/checkpoints/epoch=9999-step=940000.ckpt # TODO: change this to the path of your graphnet checkpoint
   dir: /home/eleve05/adaptnet/ # TODO: change this to your adaptnet directory
   wdir: /home/eleve05/adaptnet/graphnet/ # TODO: change this to your graphnet directory
   data_dir: /home/eleve05/adaptnet/graphnet/data/stokes3adapt/ # TODO: change this to your graphnet data directory
