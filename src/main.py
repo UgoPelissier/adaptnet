@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
     # save field
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'field'), exist_ok=True)
-    write_metric(osp.join(config['save_dir'], config['save_folder'], 'field'), pred.squeeze().detach().cpu().numpy(), 'm_pred')
+    write_metric(osp.join(config['save_dir'], config['save_folder'], 'field'), pred.squeeze().detach().cpu().numpy(), 'cad_{:03d}'.format(config["name"]))
     # write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,0], 'u_pred')
     # write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,1], 'v_pred')
 
