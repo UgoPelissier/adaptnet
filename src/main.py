@@ -143,8 +143,6 @@ if __name__ == '__main__':
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtu'), exist_ok=True)
 
     point_data={
-        # 'u_pred': pred[:,0].detach().cpu().numpy(),
-        # 'v_pred': pred[:,1].detach().cpu().numpy()
         'm_pred': pred.detach().cpu().numpy()
         }
 
@@ -155,7 +153,6 @@ if __name__ == '__main__':
                 point_data=point_data
             )
     elif (config['meshnet']['dim']==3):
-        # point_data['w_pred'] = pred[:,2].detach().cpu().numpy()
         mesh = meshio.Mesh(
                 points=processed_mesh.mesh_pos.cpu().numpy(),
                 cells={"tetra": processed_mesh.cells.cpu().numpy()},
@@ -169,8 +166,6 @@ if __name__ == '__main__':
     # save field
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'field'), exist_ok=True)
     write_metric(osp.join(config['save_dir'], config['save_folder'], 'field'), pred.squeeze().detach().cpu().numpy(), 'cad_{:03d}'.format(config["name"]))
-    # write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,0], 'u_pred')
-    # write_field(osp.join(config['save_dir'], config['save_folder'], 'field'), pred[:,1], 'v_pred')
 
     print(f'Done in: {time.time() - start_time:.2f}s\n')
 
