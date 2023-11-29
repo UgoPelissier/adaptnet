@@ -1,7 +1,7 @@
 wdir: /home/eleve05/adaptnet # TODO: change this to your adaptnet directory
 predict_dir: /home/eleve05/adaptnet/src/ # TODO: change this accordingly
 save_dir: /home/eleve05/adaptnet/src/ # TODO: change this accordingly
-name: 106 # TODO: change this to the name of your experiment
+name: 500 # TODO: change this to the name of your experiment
 save_folder: results
 device: cuda:0
 meshnet:

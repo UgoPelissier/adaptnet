@@ -89,31 +89,28 @@ if __name__ == '__main__':
         for i in range(pred.shape[0]):
             f.write('{:.6f}\n'.format(pred[i][0]))
 
-    print('Prediction saved in {}/txt/cad_{:03d}.txt'.format(osp.join(config['save_dir'], config['save_folder']), config["name"]))
-
     # create mesh directories
     os.makedirs(osp.join(config['save_dir'], config['save_folder']), exist_ok=True)
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh3'), exist_ok=True)
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh'), exist_ok=True)
 
     # save mesh
     if (config['meshnet']['dim'] == 2):
         generate_mesh_2d(
-            cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo'.format(config['name'])),
+            cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}'.format(config['name']), 'cad_{:03d}.geo'.format(config['name'])),
             batch=processed_cad,
             pred=pred,
             save_dir=osp.join(config['save_dir'], config['save_folder'])
         )
     elif (config['meshnet']['dim'] == 3):
         generate_mesh_3d(
-            cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo'.format(config['name'])),
+            cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}'.format(config['name']), 'cad_{:03d}.geo'.format(config['name'])),
             batch=processed_cad,
             pred=pred,
             save_dir=osp.join(config['save_dir'], config['save_folder'])
         )
     else:
         raise ValueError("The dimension must be either 2 or 3.")
-    print('Mesh saved in {}/mesh/cad_{:03d}.msh'.format(osp.join(config['save_dir'], config['save_folder']), config["name"]))
     
     print(f'Done in: {time.time() - start_time:.2f}s\n')
 
@@ -155,7 +152,7 @@ if __name__ == '__main__':
     elif (config['meshnet']['dim']==3):
         mesh = meshio.Mesh(
                 points=processed_mesh.mesh_pos.cpu().numpy(),
-                cells={"tetra": processed_mesh.cells.cpu().numpy()},
+                cells={"tetra": processed_mesh.cells.long().cpu().numpy()},
                 point_data=point_data
             )
     else:

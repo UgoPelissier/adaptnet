@@ -19,7 +19,7 @@ def node_type(label: str) -> int:
 def file(
         config: dict,
 ) -> Data:
-    with open(osp.join(config['predict_dir'], 'data', 'cad_{:03d}.geo_unrolled'.format(config['name'])), 'r') as f:
+    with open(osp.join(config['predict_dir'], 'data', 'cad_{:03d}'.format(config['name']), 'cad_{:03d}.geo_unrolled'.format(config['name'])), 'r') as f:
         # read lines and remove comments
         lines = f.readlines()
         lines = [line.replace(' ', '') for line in lines]
