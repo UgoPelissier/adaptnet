@@ -158,7 +158,7 @@ if __name__ == '__main__':
     else:
         raise ValueError("The dimension must be either 2 or 3.")
         
-    mesh.write(osp.join(config['save_dir'], config['save_folder'], 'vtu', 'cad_{:03d}_sol.vtu'.format(config["name"])), binary=False)
+    mesh.write(osp.join(config['save_dir'], config['save_folder'], 'vtu', 'cad_{:03d}.vtu'.format(config["name"])), binary=False)
 
     # save field
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'field'), exist_ok=True)
