@@ -41,14 +41,16 @@ Follow the instructions in the README.md files of Meshnet and Graphnet to downlo
 
 Alternatively, if you already have the datasets, you can use the scripts in `scripts` to train and test the models:
 ```bash
-bash ./scripts/meshnet/train.sh env=$ENV_NAME (mines or safran)
-bash ./scripts/meshnet/test.sh env=$ENV_NAME (mines or safran)
+bash ./scripts/meshnet/train.sh
+bash ./scripts/meshnet/test.sh
 ```
 
 ```bash
-bash ./scripts/graphnet/train.sh env=$ENV_NAME (mines or safran)
-bash ./scripts/graphnet/test.sh env=$ENV_NAME (mines or safran)
+bash ./scripts/graphnet/train.sh
+bash ./scripts/graphnet/test.sh
 ```
+
+For testing, you can change the `--checkpoint` variable to the path of the checkpoint you want to test inside the `test.sh` file.
 
 ### Run Adaptnet
 Create a data folder in `src`:
@@ -60,8 +62,9 @@ and put your CAD file inside it. For instance, `src` folder could look like this
 └── src
     ├── configs
     └── data
-        ├── cad_500.geo_unrolled
-        └── cad_500.geo
+        └── cad_500
+            ├── cad_500.geo_unrolled
+            └── cad_500.geo
     ├── envs
     ├── utils
     ├── __init__.py
@@ -69,7 +72,7 @@ and put your CAD file inside it. For instance, `src` folder could look like this
     └── dataset.py
 ```
 
-Don't forget to open the `src/configs/{$ENV_NAME}.yaml` file and change the paths according to your setup.
+Open the `src/configs/config.yaml` file, check, and change the parameters marked with `# TODO` if needed.
 
 Then, run Adaptnet:
 ```bash
