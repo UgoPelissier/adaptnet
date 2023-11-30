@@ -83,6 +83,8 @@ if __name__ == '__main__':
         std=std_vec_y_train
     )
 
+    print(f'Done in: {time.time() - start_time:.2f}s\n')
+
     # save prediction to txt file
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'txt'), exist_ok=True)
     with open(osp.join(config['save_dir'], config['save_folder'], 'txt', 'cad_{:03d}.txt'.format(config["name"])), 'w') as f:
@@ -111,8 +113,6 @@ if __name__ == '__main__':
         )
     else:
         raise ValueError("The dimension must be either 2 or 3.")
-    
-    print(f'Done in: {time.time() - start_time:.2f}s\n')
 
     start_time = time.time()
     print('GraphNet...')
@@ -135,6 +135,12 @@ if __name__ == '__main__':
             mean=mean_vec_y_train,
             std=std_vec_y_train
         )
+    
+    # save field
+    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'field'), exist_ok=True)
+    write_metric(osp.join(config['save_dir'], config['save_folder'], 'field'), pred.squeeze().detach().cpu().numpy(), 'cad_{:03d}'.format(config["name"]))
+
+    print(f'Done in: {time.time() - start_time:.2f}s\n')
     
     # save solution
     os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtu'), exist_ok=True)
@@ -159,11 +165,5 @@ if __name__ == '__main__':
         raise ValueError("The dimension must be either 2 or 3.")
         
     mesh.write(osp.join(config['save_dir'], config['save_folder'], 'vtu', 'cad_{:03d}.vtu'.format(config["name"])), binary=False)
-
-    # save field
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'field'), exist_ok=True)
-    write_metric(osp.join(config['save_dir'], config['save_folder'], 'field'), pred.squeeze().detach().cpu().numpy(), 'cad_{:03d}'.format(config["name"]))
-
-    print(f'Done in: {time.time() - start_time:.2f}s\n')
 
     print(f'Predictions saved in {osp.join(config["save_dir"], config["save_folder"])}')
