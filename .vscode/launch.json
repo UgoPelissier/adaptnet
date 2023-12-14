@@ -42,7 +42,7 @@
           "fit",
           //////////////////// CHECKPOINT ////////////////////
           "-c",
-          "/home/eleve05/adaptnet/meshnet/configs/mines.yaml",
+          "/home/eleve05/adaptnet/meshnet/configs/config.yaml",
         ]
       },
       {
@@ -61,7 +61,7 @@
           "fit",
           //////////////////// CHECKPOINT ////////////////////
           "-c",
-          "/home/eleve05/adaptnet/graphnet/configs/mines.yaml",
+          "/home/eleve05/adaptnet/graphnet/configs/config.yaml",
         ]
       },
       {
@@ -80,7 +80,7 @@
           "test",
           //////////////////// CHECKPOINT ////////////////////
           "-c",
-          "/home/eleve05/adaptnet/meshnet/configs/mines.yaml",
+          "/home/eleve05/adaptnet/meshnet/configs/config.yaml",
           "--ckpt_path",
           "/home/eleve05/adaptnet/meshnet/logs/version_6/checkpoints/epoch=115-step=2784.ckpt",
         ]
@@ -101,7 +101,7 @@
           "test",
           //////////////////// CHECKPOINT ////////////////////
           "-c",
-          "/home/eleve05/adaptnet/graphnet/configs/mines.yaml",
+          "/home/eleve05/adaptnet/graphnet/configs/config.yaml",
           "--ckpt_path",
           "/home/eleve05/adaptnet/graphnet/logs/version_10/checkpoints/epoch=999-step=6000.ckpt",
         ]
