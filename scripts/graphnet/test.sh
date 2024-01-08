@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-ckpt_path=/home/eleve05/adaptnet/graphnet/logs/version_14/checkpoints/epoch=3803-step=357576.ckpt # TODO: change this to the path of the checkpoint you want to test
+ckpt_path=/home/eleve05/adaptnet/graphnet/logs/version_15/checkpoints/epoch=9999-step=940000.ckpt # TODO: change this to the path of the checkpoint you want to test
 
 clear
 
