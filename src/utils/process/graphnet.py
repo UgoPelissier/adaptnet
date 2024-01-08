@@ -57,18 +57,8 @@ def vtk(
 
     node_type_one_hot = torch.nn.functional.one_hot(node_type.long(), num_classes=NodeType.SIZE)
 
-    # get initial velocity
-    v_0 = torch.zeros(mesh.points.shape[0], config['graphnet']['dim'])
-    mask = (node_type.long())==torch.tensor(NodeType.INFLOW)
-    if (config['graphnet']['dim'] == 2):
-        v_0[mask] = torch.Tensor([config['graphnet']['u_0'], config['graphnet']['v_0']])
-    elif (config['graphnet']['dim'] == 3):
-        v_0[mask] = torch.Tensor([config['graphnet']['u_0'], config['graphnet']['v_0'], config['graphnet']['w_0']])
-    else:
-        raise ValueError("The dimension must be either 2 or 3.")
-
     # get features
-    x = torch.cat((v_0, node_type_one_hot),dim=-1).type(torch.float)
+    x = torch.cat((node_type_one_hot, torch.Tensor(mesh.points)),dim=-1).type(torch.float)
 
     # get edge indices in COO format
     if (config['graphnet']['dim'] == 2):
@@ -90,7 +80,6 @@ def vtk(
         edge_attr=edge_attr.to(config['device']),
         cells=torch.Tensor(mesh.cells[1-k].data).to(config['device']),
         mesh_pos=torch.Tensor(mesh.points).to(config['device']),
-        v_0=v_0.to(config['device']),
         name=config['name']
     )
 

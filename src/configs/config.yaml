@@ -17,15 +17,12 @@ meshnet:
   output_dim: 1
   optimizer: torch.optim.AdamW
 graphnet:
-  checkpoint_path: /home/eleve05/adaptnet/graphnet/logs/version_4/checkpoints/epoch=9999-step=940000.ckpt # TODO: change this to the path of your graphnet checkpoint
+  checkpoint_path: /home/eleve05/adaptnet/graphnet/logs/version_15/checkpoints/epoch=9999-step=940000.ckpt # TODO: change this to the path of your graphnet checkpoint
   dir: /home/eleve05/adaptnet/ # TODO: change this to your adaptnet directory
   wdir: /home/eleve05/adaptnet/graphnet/ # TODO: change this to your graphnet directory
   data_dir: /home/eleve05/adaptnet/graphnet/data/stokes3adapt/ # TODO: change this to your graphnet data directory
   logs: /home/eleve05/adaptnet/graphnet/logs/ # TODO: change this to your graphnet logs directory
   dim: 3
-  num_layers: 15
+  num_layers: 5
   hidden_dim: 128
   optimizer: torch.optim.AdamW
-  u_0: 1.0
-  v_0: 0.0
-  w_0: 0.0
