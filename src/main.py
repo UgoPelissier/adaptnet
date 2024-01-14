@@ -59,60 +59,60 @@ if __name__ == '__main__':
     )
     print(f'Loaded GraphNet from {config["graphnet"]["checkpoint_path"]}\n')
 
-    # time the execution
-    start_time = time.time()
-    print('MeshNet...')
-    # process cad
-    processed_cad = meshnet_process.file(config=config)
+    # # time the execution
+    # start_time = time.time()
+    # print('MeshNet...')
+    # # process cad
+    # processed_cad = meshnet_process.file(config=config)
 
-    # load stats
-    train_stats, val_stats, test_stats = meshnet_stats.load_stats(config['meshnet']['data_dir'], torch.device(config['device']))
-    mean_vec_x_train, std_vec_x_train, mean_vec_edge_train, std_vec_edge_train, mean_vec_y_train, std_vec_y_train = train_stats
+    # # load stats
+    # train_stats, val_stats, test_stats = meshnet_stats.load_stats(config['meshnet']['data_dir'], torch.device(config['device']))
+    # mean_vec_x_train, std_vec_x_train, mean_vec_edge_train, std_vec_edge_train, mean_vec_y_train, std_vec_y_train = train_stats
 
-    # predict mesh point density    
-    pred = meshnet_stats.unnormalize(
-        data=meshnet(
-            batch=processed_cad,
-            split='predict',
-            mean_vec_x_predict=mean_vec_x_train,
-            std_vec_x_predict=std_vec_x_train,
-            mean_vec_edge_predict=mean_vec_edge_train,
-            std_vec_edge_predict=std_vec_edge_train
-        ),
-        mean=mean_vec_y_train,
-        std=std_vec_y_train
-    )
+    # # predict mesh point density    
+    # pred = meshnet_stats.unnormalize(
+    #     data=meshnet(
+    #         batch=processed_cad,
+    #         split='predict',
+    #         mean_vec_x_predict=mean_vec_x_train,
+    #         std_vec_x_predict=std_vec_x_train,
+    #         mean_vec_edge_predict=mean_vec_edge_train,
+    #         std_vec_edge_predict=std_vec_edge_train
+    #     ),
+    #     mean=mean_vec_y_train,
+    #     std=std_vec_y_train
+    # )
 
-    print(f'Done in: {time.time() - start_time:.2f}s\n')
+    # print(f'Done in: {time.time() - start_time:.2f}s\n')
 
-    # save prediction to txt file
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'txt'), exist_ok=True)
-    with open(osp.join(config['save_dir'], config['save_folder'], 'txt', 'cad_{:03d}.txt'.format(config["name"])), 'w') as f:
-        for i in range(pred.shape[0]):
-            f.write('{:.6f}\n'.format(pred[i][0]))
+    # # save prediction to txt file
+    # os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'txt'), exist_ok=True)
+    # with open(osp.join(config['save_dir'], config['save_folder'], 'txt', 'cad_{:03d}.txt'.format(config["name"])), 'w') as f:
+    #     for i in range(pred.shape[0]):
+    #         f.write('{:.6f}\n'.format(pred[i][0]))
 
-    # create mesh directories
-    os.makedirs(osp.join(config['save_dir'], config['save_folder']), exist_ok=True)
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
-    os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh'), exist_ok=True)
+    # # create mesh directories
+    # os.makedirs(osp.join(config['save_dir'], config['save_folder']), exist_ok=True)
+    # os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'vtk'), exist_ok=True)
+    # os.makedirs(osp.join(config['save_dir'], config['save_folder'], 'mesh'), exist_ok=True)
 
-    # save mesh
-    if (config['meshnet']['dim'] == 2):
-        generate_mesh_2d(
-            cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}'.format(config['name']), 'cad_{:03d}.geo'.format(config['name'])),
-            batch=processed_cad,
-            pred=pred,
-            save_dir=osp.join(config['save_dir'], config['save_folder'])
-        )
-    elif (config['meshnet']['dim'] == 3):
-        generate_mesh_3d(
-            cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}'.format(config['name']), 'cad_{:03d}.geo'.format(config['name'])),
-            batch=processed_cad,
-            pred=pred,
-            save_dir=osp.join(config['save_dir'], config['save_folder'])
-        )
-    else:
-        raise ValueError("The dimension must be either 2 or 3.")
+    # # save mesh
+    # if (config['meshnet']['dim'] == 2):
+    #     generate_mesh_2d(
+    #         cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}'.format(config['name']), 'cad_{:03d}.geo'.format(config['name'])),
+    #         batch=processed_cad,
+    #         pred=pred,
+    #         save_dir=osp.join(config['save_dir'], config['save_folder'])
+    #     )
+    # elif (config['meshnet']['dim'] == 3):
+    #     generate_mesh_3d(
+    #         cad_path=osp.join(config['predict_dir'], 'data', 'cad_{:03d}'.format(config['name']), 'cad_{:03d}.geo'.format(config['name'])),
+    #         batch=processed_cad,
+    #         pred=pred,
+    #         save_dir=osp.join(config['save_dir'], config['save_folder'])
+    #     )
+    # else:
+    #     raise ValueError("The dimension must be either 2 or 3.")
 
     start_time = time.time()
     print('GraphNet...')
